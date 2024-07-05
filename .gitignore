@@ -1,6 +1,5 @@
-Fhree.opam
+TFhree.opam
 _build/
 .vscode/
-Fhree
+TFhree
 todo
-*.cfa

@@ -1,26 +1,14 @@
 (** Syntax of the language : definition of ADT, EVT, types and Environment *)
 
-(** 
-	An environment is a map from identifier to "something".
-	In the semantics this something is a value (what the identifier is bound to).
-	In the type system this "something" is a type.
-  In CFA this is a label.
-	For simplicity we represent the environment as an association list, i.e., a list of pair (identifier, data).
- *)
 type 'v env = (string * 'v) list
 [@@deriving show]
 
-(**
-  Given an environment {env} and an identifier {x} it returns the data {x} is bound to.
-  If there is no binding, it raises an exception.
-*)
 let rec lookup env x =
   match env with
   | []        -> raise(Exceptions.Binding_Error(x ^ " not found"))
   | (y, v)::r -> if x=y then v else lookup r x
 ;;
 
-(* alias: identifiers are strings *)
 type ide = string
 [@@deriving show]
 
@@ -76,10 +64,7 @@ and ttype =
 and located_exp = exp located                 			(* ( exp * location ) *)
 [@@deriving show]
 
-(** Expressible and denotable values. 
- *  A runtime value is an integer, a boolean, a float, a char, a string,
- *	a tuple or a list of values or a function closure.
- *)
+(** Expressible and denotable values. *)
 and value =
 	| Unit																									(* evaluation of an empty program *)
 	| Int of int

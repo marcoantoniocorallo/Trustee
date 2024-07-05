@@ -2,7 +2,7 @@ all: build
 
 build:
 	dune build
-	cp -f _build/default/bin/main.exe ./Fhree
+	cp -f _build/default/bin/main.exe ./TFhree
 
 install: build 
 	mkdir -p _install
@@ -15,6 +15,6 @@ clear: clean
 clean:
 	rm -fr _build
 	rm -fr _install
-	rm -f ./Fhree
+	rm -f ./TFhree
 
 .PHONY: all build install clear clean
