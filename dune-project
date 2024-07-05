@@ -1,6 +1,6 @@
 (lang dune 3.15)
 
-(name Fhree)
+(name TFhree)
 
 (generate_opam_files true)
 
@@ -9,7 +9,7 @@
 (wrapped_executables false)
 
 (source
- (github marcoantoniocorallo/Fhree))
+ (github marcoantoniocorallo/Trusted-Fhree))
 
 (authors "Marco Antonio Corallo")
 
@@ -18,7 +18,7 @@
 (license GPL-3.0-or-later)
 
 (package
- (name Fhree)
+ (name TFhree)
  (depends ocaml dune)
 )
 

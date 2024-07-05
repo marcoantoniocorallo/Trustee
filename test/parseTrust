@@ -1,0 +1,19 @@
+(* 
+    trust pwd = {
+        secret: let pass = "abcd" in pass;
+
+        let fun checkpwd (guess : string) : bool = password = guess 
+        in checkpwd;
+
+        handle: {checkpwd}
+    }
+*)
+
+let trust pwd = {
+    secret: let pass = "abcd" in pass;
+
+    let fun checkpwd (guess : string) : bool = password = guess 
+    in checkpwd;
+
+    handle: {checkpwd}
+};

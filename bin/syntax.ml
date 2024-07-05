@@ -46,6 +46,11 @@ type exp =
 	
 	| NativeFunction of ( value -> value ) * ide option 
 																										(* (ocaml code, arg_name) *)
+
+	| Trust of located_exp list								(* Trust block of code and data *)
+	| Secret of located_exp														(* Secret data in trusted blocks *)
+	| Handle of located_exp list											(* Interface fn between trusted and untrusted code *)
+	
 	[@@deriving show]
 
 (** Types definition *)
@@ -59,21 +64,29 @@ and ttype =
   | Tfun of ttype * ttype                           (*  Type of function *)
   | Ttuple of ttype list                        		(*  Compound type: tuple *)
   | Tlist of ttype option                           (*  Compound type: list *)
-	[@@deriving show]
 
-and located_exp = exp located                 			(* ( exp * location ) *)
-[@@deriving show]
+	|	TtrustedBlock																		(*	Type of a trusted block *)
+	[@@deriving show]
 
 (** Expressible and denotable values. *)
 and value =
-	| Unit																									(* evaluation of an empty program *)
+	| Unit																									(*	evaluation of an empty program *)
 	| Int of int
 	| Bool of bool
 	| Float of float
 	| Char of char
 	| String of string
-	| Closure of string * string * located_exp * value env	(* (f, x, fBody, fDeclEnv) *)
-	| Tuple of value list   																(* Heterogeneous fixed-length tuple of values*)
-	| ListV of value list   																(* Homogeneous list of values *)
+	| Closure of string * string * located_exp * value env	(*	(f, x, fBody, fDeclEnv) *)
+	| Tuple of value list   																(*	Heterogeneous fixed-length tuple of values*)
+	| ListV of value list   																(*	Homogeneous list of values *)
+
+	| TrustedBlock of (value * confidentiality option) list	(*	Trusted block value *)
+	[@@deriving show]
+
+and confidentiality = 
+	| Private
+	| Public
+
+	and located_exp = exp located                 					(* ( exp * location ) *)
 	[@@deriving show]
 ;;
