@@ -16,4 +16,4 @@ let trust pwd = {
     in checkpwd;
 
     handle: {checkpwd}
-};
+} in pwd

@@ -97,12 +97,6 @@ expr:
       Let(e1, e2, e3, e4) |@| $loc
     }
 
-| LET e = let_expr ";"
-    { 
-      let (e1, e2, e3) = e in 
-      Let(e1, e2, e3, e3) |@| $loc
-    }
-
 | FUN f = ID l = nonempty_list(delimited("(",separated_pair(ID, ":", ptype),")")) 
     ":" t_res = ptype "=" e1 = expr                                         %prec prec_let
     { 
