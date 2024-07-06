@@ -1,19 +1,43 @@
-(* 
-    trust pwd = {
-        secret: let pass = "abcd" in pass;
-
-        let fun checkpwd (guess : string) : bool = password = guess 
-        in checkpwd;
-
-        handle: {checkpwd}
-    }
-*)
-
+(*
 let trust pwd = {
-    secret: let pass = "abcd" in pass;
-
-    let fun checkpwd (guess : string) : bool = password = guess 
-    in checkpwd;
-
+    let secret pass = "abcd";
+    let fun checkpwd (guess : string) : bool = password = guess;
     handle: {checkpwd}
 } in pwd
+*)
+
+(* (* FAILURE !!! Handle accepts only functions *)
+let trust pwd = {
+    let secret pass = "abcd";
+    let id = "pippo";
+    let fun checkpwd (guess : string) : bool = password = guess;
+    handle: {checkpwd; (let x = "pippo" in x); [1, 2, 3]}
+} in pwd
+*)
+
+(* (* FAILURE !!! NO NESTED BLOCKS *)
+let trust pwd = {
+  let trust deeper = {
+    let secret pass = "abcd";
+
+    let fun checkpwd (guess : string) : bool = password = guess;
+    handle: {checkpwd; (let x = "pippo" in x); [1, 2, 3]}   
+  };
+  handle: {[1,2]}
+} in pwd
+*)
+
+(*
+(* FAILURE !!! Only data can be secret *)
+let trust pwd = {
+  let trust deeper = {
+    let secret pass = "abcd";
+
+    let secret fun checkpwd (guess : string) : bool = password = guess;
+    handle: {checkpwd; (let x = "pippo" in x); [1, 2, 3]}   
+  };
+  handle: {[1,2]}
+} in pwd
+ *)
+
+ 

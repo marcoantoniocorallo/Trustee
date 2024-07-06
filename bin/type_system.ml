@@ -184,6 +184,19 @@ let rec type_of (gamma : ttype env) (e : located_exp) : ttype =
     )
   | NativeFunction(_) -> 
     raise ( Error_of_Inconsistence("type system: !!! Prohibit use of Native Functions !!! at: "^(string_of_loc e.loc)))
+    | Trust(b) -> failwith""(* si comporta come un let, associando il nome del modulo trust nell'ambiente
+		Il valore del binding è a sua volta un ambiente, dato dalle definizioni in b
+		eval_trusted viene applicato ad ogni argomento della lista b (List.iter/List.map) *)
+	| Secret(_) -> failwith""
+	| Handle(_) -> failwith""
+  | Access(_,_) -> failwith""
+(*
+and type_of_trusted (gamma : ttype env) (e : located_sec_expr) : ttype = 
+  match e.value with
+  | Expr(e) -> type_of gamma e
+  | Secret(e) -> failwith""
+  | Handle(l) -> failwith""
+*)
   ;;
 
 let type_check e = type_of type_env e

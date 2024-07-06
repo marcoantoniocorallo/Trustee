@@ -43,14 +43,15 @@ type exp =
 	| Head of located_exp															(* Return the first element of a list *)
 	| Tail of located_exp															(* Return the list without the first el *)
 	| IsEmpty of located_exp													(* Tests if a list is empty *)
-	
 	| NativeFunction of ( value -> value ) * ide option 
 																										(* (ocaml code, arg_name) *)
-
-	| Trust of located_exp list								(* Trust block of code and data *)
-	| Secret of located_exp														(* Secret data in trusted blocks *)
+	| Trust of located_exp														(* Trust block of code and data *)
+	| Secret of located_exp														(* Secret expression *)
 	| Handle of located_exp list											(* Interface fn between trusted and untrusted code *)
-	
+	| Access of located_exp * located_exp							(* Access to trusted block name *)
+	[@@deriving show]
+
+and located_exp = exp located                 			(* ( exp * location ) *)
 	[@@deriving show]
 
 (** Types definition *)
@@ -65,7 +66,8 @@ and ttype =
   | Ttuple of ttype list                        		(*  Compound type: tuple *)
   | Tlist of ttype option                           (*  Compound type: list *)
 
-	|	TtrustedBlock																		(*	Type of a trusted block *)
+	|	TtrustedBlock of (ttype * confidentiality) env	(*	Assoc to each name a ttype 
+																										 *	and a confidentiality level *)
 	[@@deriving show]
 
 (** Expressible and denotable values. *)
@@ -80,13 +82,10 @@ and value =
 	| Tuple of value list   																(*	Heterogeneous fixed-length tuple of values*)
 	| ListV of value list   																(*	Homogeneous list of values *)
 
-	| TrustedBlock of (value * confidentiality option) list	(*	Trusted block value *)
+	| TrustedBlock of (value * confidentiality)	env					(*	Trusted block value *)
 	[@@deriving show]
 
 and confidentiality = 
 	| Private
 	| Public
-
-	and located_exp = exp located                 					(* ( exp * location ) *)
-	[@@deriving show]
 ;;

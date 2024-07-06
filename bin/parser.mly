@@ -142,15 +142,17 @@ let_expr:
       )
     }
 
-| TRUST name = ID "=" "{" e = separated_nonempty_list(";", trust_expr) "}"
-    { (name, Some (TtrustedBlock), (Trust(e) |@| $loc ) ) }
+| TRUST name = ID "=" "{" e = trust_expr "}"
+    { (name, None, Trust(e) |@| $loc ) }
 
 trust_expr:
-| SECRET ":" e = expr
-    { Secret(e) |@| $loc }
-
-| e = expr
-    { e }
+| LET s = option(SECRET) e = let_expr ";" e4 = trust_expr 
+    { 
+      let (e1, e2, e3) = e in
+      match s with
+      | None -> Let(e1, e2, e3, e4) |@| $loc
+      | Some _ -> Let(e1, e2, (Secret(e3) |@| $loc), e4) |@| $loc 
+    }
   
 | HANDLE ":" e = delimited("{", separated_nonempty_list(";", simple_expr), "}")
     { Handle(e) |@| $loc }
