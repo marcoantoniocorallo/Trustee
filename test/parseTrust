@@ -82,3 +82,14 @@ let trust pwd = {
   handle: {f}
 } in pwd
 *)
+
+(* Failure! An identifier was expected *)
+(*
+let fun f (x : int) : int = x + 1 in 
+let trust pwd = {
+  let secret pass = "abcd";
+
+  let fun checkpwd (guess : string) : bool = pass = guess;
+  handle: {(lambda : (string -> bool) -> checkpwd)}
+} in pwd
+*)
