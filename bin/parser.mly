@@ -136,9 +136,10 @@ let_expr:
 | id = ID t = option(preceded(":", ptype)) "=" e1 = expr
     { (id, t, e1) }
 
-| FUN f = ID l = nonempty_list(delimited("(",separated_pair(ID, ":", ptype),")")) 
+| FUN f = ID l = list(delimited("(",separated_pair(ID, ":", ptype),")")) 
   ":" t_res = ptype "=" e1 = expr
     { 
+      let l = match l with | [] -> [("",Tunit)] | _ -> l in 
       let (first_arg, types_folded, lambdas_folded) = curry l t_res e1 ($loc) in 
       (f, Some (types_folded), 
         Fun(f, first_arg, types_folded, (lambdas_folded |@| $loc)) |@| $loc
