@@ -28,9 +28,19 @@ let trust pwd = {
 } in pwd.checkpwd "tt"
 *)
 
-(* FAILURE! pass is still secret even if has not keyword (i.e. is not handled) *)
+(* Field not found *)
 (*
 let a = "pippo" in 
+let trust pwd = {
+  let secret pass = "abcd";
+
+  let fun checkpwd (guess : string) : bool = a = guess;
+  handle: {checkpwd}
+} in pwd.a "tt"
+*)
+
+(* FAILURE! pass is still secret even if has not keyword (i.e. is not handled) *)
+(*
 let trust pwd = {
   let pass = "abcd";
 
