@@ -28,6 +28,6 @@ let () =
       | Parser.Error ->  Printf.fprintf stderr "Syntax error at %s.\n%!" 
                         (string_of_position (Lexing.lexeme_start_p (Option.get !lexbuf)))
       (* Type Error *)
-      | Type_Error(s) -> Printf.fprintf stderr "%s\n" s
+      | Type_Error(s) -> Printf.fprintf stderr "Type Error: %s\n" s
       (* Other exceptions raised by the interpreter *)
       | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn)

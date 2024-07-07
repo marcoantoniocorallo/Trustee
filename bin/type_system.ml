@@ -42,7 +42,7 @@ let type_env = [
 ]
 
 (** Typing rule in a given type environment gamma *)
-let rec type_of (gamma : ttype env) (e : located_exp) : ttype =
+let rec type_of ?(into_tb=false) (gamma : ttype env) (e : located_exp) : ttype =
   match e.value with
   | Empty -> Tunit
   | CstI(_) -> Tint
@@ -51,14 +51,14 @@ let rec type_of (gamma : ttype env) (e : located_exp) : ttype =
   | CstC(_) -> Tchar
   | CstS(_) -> Tstring
   | Uop(op, x) -> 
-    ( match op, (type_of gamma x) with
+    ( match op, (type_of ~into_tb:into_tb gamma x) with
     | "!", Tbool -> Tbool
     | "!", _ -> raise (Type_Error ("Not of non-bool type - at Token: "^(string_of_loc (e.loc))))
     | "-", t when t = Tint || t = Tfloat -> t
     | "-", _ -> raise (Type_Error ("Not of non-number type - at Token: "^(string_of_loc (e.loc))))  
     | _, _ -> raise (Unsupported_Primitive(op))
     )
-  | Var(x)  -> lookup gamma x
+  | Var(x)  -> lookup gamma x 
   (* Define equality and comparison for each simple type *)
   | Bop(e1, "=", e2)
   | Bop(e1, "<", e2)
@@ -66,8 +66,8 @@ let rec type_of (gamma : ttype env) (e : located_exp) : ttype =
   | Bop(e1, ">", e2)
   | Bop(e1, ">=", e2)
   | Bop(e1, "<>", e2) ->
-    let t1 = type_of gamma e1 in
-    let t2 = type_of gamma e2 in
+    let t1 = type_of ~into_tb:into_tb gamma e1 in
+    let t2 = type_of ~into_tb:into_tb gamma e2 in
     ( match t1, t2 with
     | Ttuple(_), Ttuple(_)
     | Tlist(_), Tlist(_) ->     raise (Type_Error ("Equality of compound values"
@@ -78,8 +78,8 @@ let rec type_of (gamma : ttype env) (e : located_exp) : ttype =
     | _, _ -> raise (Type_Error ("Error in the arguments of equality"^(string_of_loc (e.loc))))
     )
   | Bop(e1, op, e2) ->
-    let t1 = type_of gamma e1 in
-    let t2 = type_of gamma e2 in
+    let t1 = type_of ~into_tb:into_tb gamma e1 in
+    let t2 = type_of ~into_tb:into_tb gamma e2 in
     let top = lookup gamma op in
     ( match top with
     | Tfun(t1', Tfun(t2', tr')) ->
@@ -89,15 +89,15 @@ let rec type_of (gamma : ttype env) (e : located_exp) : ttype =
     )
   | Let(x, t, e1, e2) ->
     ( match t with 
-    | Some tt -> let t1 = type_of gamma e1 in 
-      if t1 = tt then type_of ((x,t1)::gamma) e2
+    | Some tt -> let t1 = type_of ~into_tb:into_tb gamma e1 in 
+      if t1 = tt then type_of ~into_tb:into_tb ((x,t1)::gamma) e2
       else raise(Type_Error("Bad type annotation at "^(string_of_loc (e.loc))))
-    | None -> let t1 = type_of gamma e1 in type_of ((x,t1)::gamma) e2
+    | None -> let t1 = type_of ~into_tb:into_tb gamma e1 in type_of ~into_tb:into_tb ((x,t1)::gamma) e2
     )
   | If(e1, e2, e3) ->
-    if (type_of gamma e1) = Tbool then
-      let t2 = type_of gamma e2 in
-      let t3 = type_of gamma e3 in
+    if (type_of ~into_tb:into_tb gamma e1) = Tbool then
+      let t2 = type_of ~into_tb:into_tb gamma e2 in
+      let t3 = type_of ~into_tb:into_tb gamma e3 in
       if t2 <= t3 then t2 
       else raise (Type_Error 
         ("\"If-Rule\": branches have different types: then is "^(string_of_ttype t2)^", else is "^(string_of_ttype t3)
@@ -110,16 +110,16 @@ let rec type_of (gamma : ttype env) (e : located_exp) : ttype =
     ( match fun_type with 
       (Tfun(t1,t2) as t) ->
         let gamma' = (f, t) :: (x, t1) :: gamma in
-        if (type_of gamma' body) <= t2 then t
+        if (type_of ~into_tb:into_tb gamma' body) <= t2 then t
         else
         raise (Type_Error("Type Error: Function return type does not match. "
-            ^"Expected "^(string_of_ttype (type_of gamma' body))^" got "
+            ^"Expected "^(string_of_ttype (type_of ~into_tb:into_tb gamma' body))^" got "
             ^(string_of_ttype t2)^" at "^(string_of_loc (e.loc))))
       | _ -> raise (Type_Error("Type Error: Function type does not match"^(string_of_loc (e.loc))))
     )
   | Call(e1, e2) ->
-    let t1 = type_of gamma e1 in
-    let t2 = type_of gamma e2 in
+    let t1 = type_of ~into_tb:into_tb gamma e1 in
+    let t2 = type_of ~into_tb:into_tb gamma e2 in
     ( match t1 with
     | Tfun(tx, tr) as tfun ->
       if tx = t2 then tr
@@ -131,12 +131,12 @@ let rec type_of (gamma : ttype env) (e : located_exp) : ttype =
     let type_of_tuple t = 
       let rec f t acc = match t with
         | [] -> Ttuple(List.rev acc)
-        | x::xs -> f xs ((type_of gamma x::acc))
+        | x::xs -> f xs ((type_of ~into_tb:into_tb gamma x::acc))
       in f t []
     in type_of_tuple tuple
   | Proj(tup,i) ->
-    let type_of_tuple = type_of gamma tup in 
-    let type_of_i = type_of gamma i in 
+    let type_of_tuple = type_of ~into_tb:into_tb gamma tup in 
+    let type_of_i = type_of ~into_tb:into_tb gamma i in 
     ( match type_of_tuple, type_of_i with
     | Ttuple(types), Tint -> 
       (match i.value with CstI x -> get types x 
@@ -147,10 +147,10 @@ let rec type_of (gamma : ttype env) (e : located_exp) : ttype =
   | Lst(list) -> 
     ( match list with 
     | [] -> Tlist None 
-    | x::_ -> Tlist (Some(type_of gamma x)))
+    | x::_ -> Tlist (Some(type_of ~into_tb:into_tb gamma x)))
   | Cons_op(e, l) -> (* 'a -> 'a list -> 'a list *)
-    let type_of_l = type_of gamma l in 
-    let type_of_e = type_of gamma e in 
+    let type_of_l = type_of ~into_tb:into_tb gamma l in 
+    let type_of_e = type_of ~into_tb:into_tb gamma e in 
     ( match type_of_e, type_of_l with
     | t1, Tlist(Some t2) when t1 <= t2 -> type_of_l 
     | t1, Tlist(Some _) ->  raise(Type_Error("Type error: Cons between "
@@ -162,7 +162,7 @@ let rec type_of (gamma : ttype env) (e : located_exp) : ttype =
               ^" at: "^(string_of_loc (e.loc))))
     )
   | Head(l) -> (* 'a list -> 'a *)
-    let type_of_l = type_of gamma l in 
+    let type_of_l = type_of ~into_tb:into_tb gamma l in 
     ( match type_of_l with
     | Tlist(Some t) -> t
     | Tlist(None) -> raise(Type_Error("Type error: attempting to pop an element from an empty list!"
@@ -170,7 +170,7 @@ let rec type_of (gamma : ttype env) (e : located_exp) : ttype =
     | _ -> raise(Type_Error("Head of a non-list value!"^(string_of_loc (e.loc))))
     )
   | Tail(l) -> (* 'a list -> 'a *)
-    let type_of_l = type_of gamma l in 
+    let type_of_l = type_of ~into_tb:into_tb gamma l in 
     ( match type_of_l with
     | Tlist(Some t) -> Tlist(Some t)
     | Tlist(None) -> raise(Type_Error("Type error: attempting to tail an empty list!"
@@ -178,25 +178,65 @@ let rec type_of (gamma : ttype env) (e : located_exp) : ttype =
     | _ -> raise(Type_Error("Tail of a non-list value!"^(string_of_loc (e.loc))))
     )
   | IsEmpty(l) -> (* 'a list -> bool *)
-    ( match type_of gamma l with
+    ( match type_of ~into_tb:into_tb gamma l with
     | Tlist(_) -> Tbool
     | _ -> raise(Type_Error("Check emptiness of a non-list value!"^(string_of_loc (e.loc))))
     )
   | NativeFunction(_) -> 
     raise ( Error_of_Inconsistence("type system: !!! Prohibit use of Native Functions !!! at: "^(string_of_loc e.loc)))
-    | Trust(b) -> failwith""(* si comporta come un let, associando il nome del modulo trust nell'ambiente
-		Il valore del binding è a sua volta un ambiente, dato dalle definizioni in b
-		eval_trusted viene applicato ad ogni argomento della lista b (List.iter/List.map) *)
-	| Secret(_) -> failwith""
-	| Handle(_) -> failwith""
+  | Trust(b) -> 
+    if into_tb = false then TtrustedBlock(type_of_trusted b gamma [])
+    else raise (Type_Error("Cannot have nested trusted blocks."))
   | Access(_,_) -> failwith""
-(*
-and type_of_trusted (gamma : ttype env) (e : located_sec_expr) : ttype = 
+  | Secret(_) -> 
+    raise (Error_of_Inconsistence("eval: unexpected secret data outside trusted block: "
+    ^(string_of_loc e.loc) ))
+  | Handle(_) -> 
+    raise (Error_of_Inconsistence("eval: unexpected handled exp outside trusted block: "
+    ^(string_of_loc e.loc) ))
+
+(* Evaluates a trusted block of expression to an <ide -> value * confidentiality> environment 
+  * note: the only constructs possible in a trusted block are (also secret) declaration and handle
+  *)
+and type_of_trusted (e : located_exp) (env : ttype env) (tb : (ttype * confidentiality) env) : (ttype * confidentiality) env = 
   match e.value with
-  | Expr(e) -> type_of gamma e
-  | Secret(e) -> failwith""
-  | Handle(l) -> failwith""
-*)
-  ;;
+  | Let(x, t, e1, e2) -> (* checks rhs type, adds to env and tb and checks the body type *)
+    let t' = 
+      ( match e1.value with
+      | Secret(s) -> 
+        let ts = type_of ~into_tb:true env s in
+        (match ts with  (* Only data can be secret *)
+        | Tint
+        | Tbool
+        | Tfloat
+        | Tchar
+        | Tstring
+        | Ttuple(_)
+        | Tlist(_) -> ts
+        | _ -> raise (Type_Error("Only data can be secret. At: "^(string_of_loc s.loc)))
+        )
+      | Trust(_) -> raise (Type_Error("Cannot have nested trusted blocks. At: "^(string_of_loc e.loc)))
+      | _ -> type_of ~into_tb:true env e1
+      ) in 
+    (match t with 
+    | Some tt -> if t' = tt then type_of_trusted e2 ((x,t')::env) ((x, (t',Private))::tb)
+      else raise(Type_Error("Bad type annotation at "^(string_of_loc (e.loc))))
+    | None -> type_of_trusted e2 ((x,t')::env) ((x, (t',Private))::tb)
+    )
+  | Handle(l) -> (* for each item i, adds (i, (type_of i, Public)) to tb *)
+    let add_f (f : located_exp) = 
+      (match f.value with
+      | Var(name) -> 
+        (match List.assoc_opt name tb with  (* Check that the function has been defined in the block *)
+        | Some (Tfun(_) as c,_) -> (name, (c, Public))
+        | Some (_) -> raise(Type_Error("A Function was expected at: "^(string_of_loc f.loc)))
+        | _ -> raise(Type_Error("Handled Function must be declared into the block. At: "^(string_of_loc f.loc)))
+        )
+      | _ -> raise(Type_Error("An identifier was expected at: "^(string_of_loc f.loc)))
+      ) in		
+    (List.map (add_f) l)@tb
+  | other ->	raise (Error_of_Inconsistence("eval_trusted: unexpected construct! "
+              ^(Syntax.show_exp other)^" at: "^(string_of_loc e.loc) ))
+;;
 
 let type_check e = type_of type_env e

@@ -1,7 +1,17 @@
-All'interno dei trusted blocks è possibile utilizzare let expressions e handle.
-Avrei potuto utilizzare una nuova categoria sintattica nel parser per evitare la possibilità
-di dichiarare nested trusted blocks già nel front-end, ma avrei potuto comunque definire roba del tipo
-let data = let trust { ... } in 
-Il front-end avrebbe eliminato il problema in superficie, ma all'interno di espressioni avrei
-comunque il problema. Quindi ho preferito avere categorie sintattiche più semplici (e in minor numero)
-e gestirlo durante la fase di type checking
+- All'interno dei trusted blocks è possibile utilizzare let expressions e handle.
+  Avrei potuto utilizzare una nuova categoria sintattica nel parser per evitare la possibilità
+  di dichiarare nested trusted blocks già nel front-end, ma avrei potuto comunque definire roba del tipo
+  let data = let trust { ... } in 
+  Il front-end avrebbe eliminato il problema in superficie, ma all'interno di espressioni avrei
+  comunque il problema. Quindi ho preferito avere categorie sintattiche più semplici (e in minor numero)
+  e gestirlo durante la fase di type checking
+
+- Ogni dichiarazione (Let ... ) all'interno di un blocco trusted è privata by-default;
+  Le funzioni all'interno di un costrutto Handle vengono poi ri-aggiunte all'ambiente con qualificatore
+  Public, sfruttando lo shadowing
+
+- Solo i dati possono essere dichiarati secret, non le funzioni
+
+- Le funzioni dichiarate all'interno di un blocco handle devono essere già state definite nel blocco
+  e devono quindi avere un nome. 
+  In particolare, nel blocco handle si possono solo inserire nomi di funzioni, non altre espressioni
