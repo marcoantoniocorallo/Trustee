@@ -101,7 +101,7 @@ expr:
 | FUN f = ID l = list(delimited("(",separated_pair(ID, ":", ptype),")")) 
     ":" t_res = ptype "=" e1 = expr                                         %prec prec_let
     { 
-      let l = match l with | [] -> [("_",Tunit)] | _ -> l in 
+      let l = match l with | [] -> [("",Tunit)] | _ -> l in 
       let (first_arg, types_folded, lambdas_folded) = curry l t_res e1 ($loc) in 
       Fun(f, first_arg, types_folded, (lambdas_folded |@| $loc)) |@| $loc
     }
@@ -109,7 +109,7 @@ expr:
 | LAMBDA l = list(delimited("(",separated_pair(ID, ":", ptype),")")) 
     ":" t_res = ptype "->" e = expr                                         %prec prec_let
     { 
-      let l = match l with | [] -> [("_",Tunit)] | _ -> l in 
+      let l = match l with | [] -> [("",Tunit)] | _ -> l in 
       let (first_arg, types_folded, lambdas_folded) = curry l t_res e ($loc) in 
       Fun("", first_arg, types_folded, (lambdas_folded |@| $loc)) |@| $loc 
     }
