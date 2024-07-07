@@ -48,3 +48,24 @@ let trust pwd = {
   handle: {checkpwd}
 } in pwd.pass
  *)
+
+ (* syntax error: handle list canno be empty *)
+ (*
+ let trust pwd = {
+  let pass = "abcd";
+
+  let fun checkpwd (guess : string) : bool = guess = pass;
+  handle: {}
+} in pwd
+ *)
+
+(* more functions into handle *)
+(*
+ let trust pwd = {
+  let pass = "abcd";
+
+  let fun checkpwd (guess : string) : bool = guess = pass;
+  let fun checkpwd2 : bool = true;
+  handle: {checkpwd; checkpwd2}
+} in pwd.checkpwd2
+*)
