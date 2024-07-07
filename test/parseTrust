@@ -82,10 +82,3 @@ let trust pwd = {
   handle: {f}
 } in pwd
 *)
-
-let trust pwd = {
-  let secret pass = "abcd";
-
-  let fun checkpwd (guess : string) : bool = pass = guess;
-  handle: {checkpwd}
-} in pwd

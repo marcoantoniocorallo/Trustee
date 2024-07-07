@@ -1,0 +1,40 @@
+(*
+(* Closure of checkpwd *)
+let trust pwd = {
+  let secret pass = "abcd";
+
+  let fun checkpwd (guess : string) : bool = pass = guess;
+  handle: {checkpwd}
+} in pwd.checkpwd
+*)
+(*
+(* Failure! Secret variable access *)
+let trust pwd = {
+  let secret pass = "abcd";
+
+  let fun checkpwd (guess : string) : bool = pass = guess;
+  handle: {checkpwd}
+} in pwd.pass
+*)
+
+(*
+(* a variable defined inside the block requires an external var *)
+let a = "pippo" in 
+let trust pwd = {
+  let secret pass = "abcd";
+
+  let fun checkpwd (guess : string) : bool = a = guess;
+  handle: {checkpwd}
+} in pwd.checkpwd "tt"
+*)
+
+(* FAILURE! pass is still secret even if has not keyword (i.e. is not handled) *)
+(*
+let a = "pippo" in 
+let trust pwd = {
+  let pass = "abcd";
+
+  let fun checkpwd (guess : string) : bool = guess = pass;
+  handle: {checkpwd}
+} in pwd.pass
+ *)

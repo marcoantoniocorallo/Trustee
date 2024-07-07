@@ -52,7 +52,7 @@
 %token AND "&&" OR "||" NOT "!" CONCAT "^"
 %token PROJ
 %token CONS_OP "::" HEAD "hd" TAIL "tl" IS_EMPTY
-%token COMMA "," COLON ":" SEMICOLON ";" ARROW "->"
+%token COMMA "," COLON ":" SEMICOLON ";" ARROW "->" DOT "."
 %token TRUST  SECRET  HANDLE
 %token EOF
 
@@ -65,7 +65,8 @@
 %right "->" 
 %left "=" "<" ">" "<=" ">=" "<>" "&&" "||"
 %left "+" "-" "^" "+." "-." "::" 
-%left "*" "/" "%" "*." "/."
+%left "*" "/" "%" "*." "/." 
+%left "."
 
 %start <Syntax.located_exp> main
 
@@ -176,6 +177,9 @@ simple_expr:
 
 | l = lst 
     { Lst(l) |@| $loc }
+
+| e = simple_expr "." f = simple_expr
+    { Access(e,f) |@| $loc }
 
 constant:
 | i = INT

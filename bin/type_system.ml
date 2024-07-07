@@ -187,12 +187,23 @@ let rec type_of ?(into_tb=false) (gamma : ttype env) (e : located_exp) : ttype =
   | Trust(b) -> 
     if into_tb = false then TtrustedBlock(type_of_trusted b gamma [])
     else raise (Type_Error("Cannot have nested trusted blocks."))
-  | Access(_,_) -> failwith""
+  | Access(tb, field) -> 
+    ( match type_of ~into_tb:into_tb gamma tb, field.value with
+    | TtrustedBlock(env), Var(id) -> 
+      ( match List.assoc_opt id env with
+      | Some (Tfun(_) as t ,Public) -> t
+      | Some (_, Private) -> raise (Type_Error("Secret field cannot be accessed. Error at: "^(string_of_loc e.loc)))
+      | Some (_, Public) -> raise(Type_system_Failed("type_of:access: found public non-function object; at "^(string_of_loc e.loc)))
+      | None -> raise (Type_Error("Field "^id^" not found in block at: "^(string_of_loc tb.loc)))
+      )
+    | _, Var(_) -> raise (Type_Error("A Trusted block was expected in access operation at: "^(string_of_loc tb.loc)))
+    | _, _ -> raise (Type_Error("An identifier was expected in access operation at: "^(string_of_loc field.loc)))
+    )
   | Secret(_) -> 
-    raise (Error_of_Inconsistence("eval: unexpected secret data outside trusted block: "
+    raise (Error_of_Inconsistence("type_of: unexpected secret data outside trusted block: "
     ^(string_of_loc e.loc) ))
   | Handle(_) -> 
-    raise (Error_of_Inconsistence("eval: unexpected handled exp outside trusted block: "
+    raise (Error_of_Inconsistence("type_of: unexpected handled exp outside trusted block: "
     ^(string_of_loc e.loc) ))
 
 (* Evaluates a trusted block of expression to an <ide -> value * confidentiality> environment 
@@ -235,7 +246,7 @@ and type_of_trusted (e : located_exp) (env : ttype env) (tb : (ttype * confident
       | _ -> raise(Type_Error("An identifier was expected at: "^(string_of_loc f.loc)))
       ) in		
     (List.map (add_f) l)@tb
-  | other ->	raise (Error_of_Inconsistence("eval_trusted: unexpected construct! "
+  | other ->	raise (Error_of_Inconsistence("type_of_trusted: unexpected construct! "
               ^(Syntax.show_exp other)^" at: "^(string_of_loc e.loc) ))
 ;;
 

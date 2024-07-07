@@ -111,7 +111,15 @@ let rec eval ?(into_tb=false) (e : located_exp) (env : value env) : value = matc
 	| Trust(b) -> 
 		if into_tb = false then TrustedBlock(eval_trusted b env [])
 		else raise (Type_Error("Cannot have nested trusted blocks."))
-	| Access(_,_) -> failwith""
+	| Access(tb, field) -> 
+		( match eval ~into_tb:into_tb tb env, field.value with 
+		| TrustedBlock(tb_env), Var(id) -> 
+			( match List.assoc_opt id tb_env with
+			| Some (Closure(_) as t, Public) -> t
+			| _ -> raise(Type_system_Failed("Access op. with not-function or not-public objects at "^(string_of_loc e.loc)))
+			)
+		| _,_ -> raise(Type_system_Failed("Access op. with wrong types at: "^(string_of_loc e.loc)))
+		)
 	| Secret(_) -> 
 		raise (Error_of_Inconsistence("eval: unexpected secret data outside trusted block: "
 		^(string_of_loc e.loc) ))
@@ -128,7 +136,7 @@ and eval_trusted (e : located_exp) (env : value env) (tb : (value * confidential
 		let xVal = 
 			( match eRhs.value with
 			| Secret(s) -> eval ~into_tb:true s env
-			| Trust(_) -> raise (Type_Error("Cannot have nested trusted blocks."))
+			| Trust(_) -> raise (Type_system_Failed("Cannot have nested trusted blocks."))
 			| _ -> eval ~into_tb:true eRhs env
 			) in 
 		let letEnv = (x, xVal) :: env in
