@@ -53,7 +53,7 @@
 %token PROJ
 %token CONS_OP "::" HEAD "hd" TAIL "tl" IS_EMPTY
 %token COMMA "," COLON ":" SEMICOLON ";" ARROW "->" DOT "."
-%token TRUST  SECRET  HANDLE
+%token TRUST  SECRET  HANDLE  PLUGIN
 %token EOF
 
 (** 
@@ -149,17 +149,8 @@ let_expr:
 | TRUST name = ID "=" "{" e = trust_expr "}"
     { (name, None, Trust(e) |@| $loc ) }
 
-trust_expr:
-| LET s = option(SECRET) e = let_expr ";" e4 = trust_expr 
-    { 
-      let (e1, e2, e3) = e in
-      match s with
-      | None -> Let(e1, e2, e3, e4) |@| $loc
-      | Some _ -> Let(e1, e2, (Secret(e3) |@| $loc), e4) |@| $loc 
-    }
-  
-| HANDLE ":" e = delimited("{", separated_nonempty_list(";", simple_expr), "}")
-    { Handle(e) |@| $loc }
+| PLUGIN name = ID "=" "{" l = plg_expr
+    { (name, None, Plugin(l) |@| $loc ) }
 
 (** simple_expr is a syntactical category used for disambiguing the grammar. *)
 simple_expr:
@@ -199,6 +190,31 @@ constant:
 
 | s = STRING
     { CstS(s) |@| $loc } 
+
+trust_expr:
+| LET s = option(SECRET) e = let_expr IN e4 = trust_expr 
+    { 
+      let (e1, e2, e3) = e in
+      match s with
+      | None -> Let(e1, e2, e3, e4) |@| $loc
+      | Some _ -> Let(e1, e2, (Secret(e3) |@| $loc), e4) |@| $loc 
+    }
+  
+| HANDLE ":" e = delimited("{", separated_nonempty_list(";", simple_expr), "}")
+    { Handle(e) |@| $loc }
+
+plg_expr:
+| LET e = let_expr IN e4 = plg_expr 
+    { 
+      let (e1, e2, e3) = e in
+      Let(e1, e2, e3, e4) |@| $loc
+    }
+
+| LET e = let_expr "}"
+    { 
+      let (e1, e2, e3) = e in
+      Let(e1, e2, e3, e3) |@| $loc
+    }
 
 (** Fun Call and composition *)
 (** The arg of the function is a simple_expr, that is an identifier, a literal,

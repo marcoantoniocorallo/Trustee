@@ -12,7 +12,7 @@ open Exceptions;;
 	Note: this function implements the big-step operational semantics with environment.
   Note: type annotations are here ignored: they are already checked by the type checker.
  *)
-let rec eval ?(into_tb=false) (e : located_exp) (env : value env) : value = match e.value with
+let rec eval ?(into_block=false) (e : located_exp) (env : value env) : value = match e.value with
 	| Empty -> Unit
 	| CstI i -> Int i
 	| CstB b -> Bool b
@@ -20,37 +20,37 @@ let rec eval ?(into_tb=false) (e : located_exp) (env : value env) : value = matc
 	| CstC c -> Char c
 	| CstS s -> String s
 	| Uop(op, x) -> 
-		(try (eval ~into_tb:into_tb x env) |> eval_uop op 
+		(try (eval ~into_block:into_block x env) |> eval_uop op 
 		with |_ ->	raise(Unsupported_Primitive("eval:Uop of "^op
               	^" at Token: "^(string_of_loc (e.loc) ) ) ))
 	| Bop(e1, op, e2) -> 
-    let v1 = eval ~into_tb:into_tb e1 env in 
-    let v2 = eval ~into_tb:into_tb e2 env in 
+    let v1 = eval ~into_block:into_block e1 env in 
+    let v2 = eval ~into_block:into_block e2 env in 
     (try eval_bop v1 op v2 
 		with |_ ->	raise(Unsupported_Primitive("eval:Bop of "^op
                 ^" at Token: "^(string_of_loc (e.loc) ) ) )
 		)
 	| Var x  -> lookup env x
 	| Let(x, _, eRhs, letBody) ->
-		let xVal = eval ~into_tb:into_tb eRhs env in
+		let xVal = eval ~into_block:into_block eRhs env in
 		let letEnv = (x, xVal) :: env in
-		eval ~into_tb:into_tb letBody letEnv
+		eval ~into_block:into_block letBody letEnv
 	| If(e1, e2, e3) ->
-		let evaluated = eval ~into_tb:into_tb e1 env in 
+		let evaluated = eval ~into_block:into_block e1 env in 
 		(match evaluated with
-		| Bool true -> eval ~into_tb:into_tb e2 env
-		| Bool false -> eval ~into_tb:into_tb e3 env
+		| Bool true -> eval ~into_block:into_block e2 env
+		| Bool false -> eval ~into_block:into_block e3 env
 		| _ ->  raise (Type_system_Failed("eval:If non-bool guard - "
             ^(string_of_value evaluated)^" at Token: "^(string_of_loc (e.loc) ) ) )
 		)
 	| Fun(f, x, _, fBody) -> Closure(f, x, fBody, env)
 	| Call(eFun, eArg) ->
-		let fClosure = eval ~into_tb:into_tb eFun env in
+		let fClosure = eval ~into_block:into_block eFun env in
 		(match fClosure with
 		| Closure (f, x, fBody, fDeclEnv) ->
-			let xVal = eval ~into_tb:into_tb eArg env in
+			let xVal = eval ~into_block:into_block eArg env in
 			let fBodyEnv = (x, xVal) :: (f, fClosure) :: fDeclEnv
-			in eval ~into_tb:into_tb fBody fBodyEnv
+			in eval ~into_block:into_block fBody fBodyEnv
 		| _ ->  raise (Type_system_Failed("eval:Call: a function was expected! "
             ^(string_of_value fClosure)^" at Token: "^(string_of_loc (e.loc) ) ) )
 		)
@@ -58,12 +58,12 @@ let rec eval ?(into_tb=false) (e : located_exp) (env : value env) : value = matc
 		let evaluateTuple t = 
 			let rec f t acc = match t with
 				| [] -> Tuple(List.rev acc)
-				| x::xs -> f xs (eval ~into_tb:into_tb x env::acc)
+				| x::xs -> f xs (eval ~into_block:into_block x env::acc)
 			in f t []
 		in evaluateTuple tuple
   | Proj(t,i) -> 
-    let tuple = eval ~into_tb:into_tb t env in 
-    let index = eval ~into_tb:into_tb i env in 
+    let tuple = eval ~into_block:into_block t env in 
+    let index = eval ~into_block:into_block i env in 
     (match tuple, index with 
     | Tuple(t), Int n -> get t n
     | _, _ -> raise (Type_system_Failed("eval:Proj a tuple and an integer was expected - "
@@ -73,30 +73,30 @@ let rec eval ?(into_tb=false) (e : located_exp) (env : value env) : value = matc
 		let evaluateList l = 
 			let rec f l acc = match l with
 				| [] -> ListV(List.rev acc)
-				| x::xs -> f xs (eval ~into_tb:into_tb x env::acc)
+				| x::xs -> f xs (eval ~into_block:into_block x env::acc)
 			in f l []
 		in evaluateList list
 	| Cons_op(e, l) ->
-		let v1 = eval ~into_tb:into_tb e env in 
-		let v2 = eval ~into_tb:into_tb l env in
+		let v1 = eval ~into_block:into_block e env in 
+		let v2 = eval ~into_block:into_block l env in
 		(match v1, v2 with
 		| x, ListV(xs) -> ListV(x::xs)
 		| _,_ ->  raise (Type_system_Failed("eval:cons a list was expected - "^(string_of_value v1)
               ^" - "^(string_of_value v2)^" at Token: "^(string_of_loc (e.loc) ) ) ) 
 		)
 	| Head(l) ->
-		let list = eval ~into_tb:into_tb l env in 
+		let list = eval ~into_block:into_block l env in 
 		(match list with
 		| ListV(x::_) -> x
 		| _ ->  raise (Type_system_Failed("eval:Head - "^(string_of_value list)
             ^" at Token: "^(string_of_loc (e.loc) ) ) ) )
-	| Tail(l) -> let list = eval ~into_tb:into_tb l env in 
+	| Tail(l) -> let list = eval ~into_block:into_block l env in 
 		(match list with
 		| ListV(_::xs) -> ListV(xs)
 		| _ ->  raise (Type_system_Failed("eval:Tail - "^(string_of_value list)
             ^" at Token: "^(string_of_loc (e.loc) ) ) )
 		)
-	| IsEmpty(l) -> let list = eval ~into_tb:into_tb l env in 
+	| IsEmpty(l) -> let list = eval ~into_block:into_block l env in 
 	(match list with
 	| ListV([]) -> Bool(true)
 	| ListV(_) ->  Bool(false)
@@ -109,23 +109,21 @@ let rec eval ?(into_tb=false) (e : located_exp) (env : value env) : value = matc
 		| None	 -> f Unit
 		)
 	| Trust(b) -> 
-		if into_tb = false then TrustedBlock(eval_trusted b env [])
-		else raise (Type_Error("Cannot have nested trusted blocks."))
+		if into_block = false then TrustedBlock(eval_trusted b env [])
+		else raise (Type_Error("Cannot have nested blocks."))
 	| Access(tb, field) -> 
-		( match eval ~into_tb:into_tb tb env, field.value with 
-		| TrustedBlock(tb_env), Var(id) -> 
-			( match List.assoc_opt id tb_env with
-			| Some (Closure(_) as t, Public) -> t
-			| _ -> raise(Type_system_Failed("Access op. with not-function or not-public objects at "^(string_of_loc e.loc)))
-			)
+		( match eval ~into_block:into_block tb env, field.value with 
+		| TrustedBlock(tb_env), Var(id) -> List.assoc id tb_env |> fst
+		| UntrustedBlock(b_env), Var(id) -> List.assoc id b_env
 		| _,_ -> raise(Type_system_Failed("Access op. with wrong types at: "^(string_of_loc e.loc)))
 		)
 	| Secret(_) -> 
-		raise (Error_of_Inconsistence("eval: unexpected secret data outside trusted block: "
-		^(string_of_loc e.loc) ))
+		raise (Error_of_Inconsistence("eval: unexpected secret data outside trusted block: "^(string_of_loc e.loc) ))
 	| Handle(_) -> 
-		raise (Error_of_Inconsistence("eval: unexpected handled exp outside trusted block: "
-		^(string_of_loc e.loc) ))
+		raise (Error_of_Inconsistence("eval: unexpected handled exp outside trusted block: "^(string_of_loc e.loc) ))
+	| Plugin(e) ->
+		if into_block = false then UntrustedBlock(eval_untrusted e env [])
+		else raise (Type_Error("Cannot have nested blocks."))
 
 (* Evaluates a trusted block of expression to an <ide -> value * confidentiality> environment 
  * note: the only constructs possible in a trusted block are (also secret) declaration and handle
@@ -135,22 +133,35 @@ and eval_trusted (e : located_exp) (env : value env) (tb : (value * confidential
 	| Let(x, _, eRhs, letBody) -> (* evaluates rhs, adds to env and tb and eval(_trusted) the body *)
 		let xVal = 
 			( match eRhs.value with
-			| Secret(s) -> eval ~into_tb:true s env
-			| Trust(_) -> raise (Type_system_Failed("Cannot have nested trusted blocks."))
-			| _ -> eval ~into_tb:true eRhs env
+			| Secret(s) -> eval ~into_block:true s env
+			| Trust(_) -> raise (Type_system_Failed("Cannot have nested blocks."))
+			| _ -> eval ~into_block:true eRhs env
 			) in 
 		let letEnv = (x, xVal) :: env in
 		let tb' = (x, (xVal, Private))::tb in 
 		eval_trusted letBody letEnv tb'
 	| Handle(l) -> (* for each item i, adds (i, (eval i, Public)) to tb *)
 		let add_f (f : located_exp) = 
-			(match eval ~into_tb:true f env with
+			(match eval ~into_block:true f env with
 			| Closure(name,_,_,_) as c -> (name, (c, Public))
 			| _ -> raise(Type_system_Failed("eval_trusted: not-function value in handle at: "^(string_of_loc e.loc)))
 			) in		
 		(List.map (add_f) l)@tb
 	| other ->	raise (Error_of_Inconsistence("eval_trusted: unexpected construct! "
 							^(Syntax.show_exp other)^" at: "^(string_of_loc e.loc) ))
+
+(* Evaluates a trusted block of expression to an <ide -> value * confidentiality> environment 
+* note: the only constructs possible in a trusted block are (also secret) declaration and handle
+*)
+and eval_untrusted (e : located_exp) (env : value env) (b : value env) : value env = 
+	match e.value with
+	| Let(x, _, eRhs, letBody) -> 
+    let xVal = eval ~into_block:true eRhs env in 
+		let letEnv = (x, xVal) :: env in
+		let b' = (x, xVal)::b in 
+		eval_untrusted letBody letEnv b'
+  | _ -> b  (* recall: the only possible exp in a plugin are declarations; 
+              the other ones indicate the end of the block *)
 ;;
 
 let eval (e : located_exp) : value = eval e Native_functions.env;;

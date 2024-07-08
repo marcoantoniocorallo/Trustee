@@ -1,18 +1,18 @@
 (*
 (* Closure of checkpwd *)
 let trust pwd = {
-  let secret pass = "abcd";
+  let secret pass = "abcd" in
 
-  let fun checkpwd (guess : string) : bool = pass = guess;
+  let fun checkpwd (guess : string) : bool = pass = guess in
   handle: {checkpwd}
 } in pwd.checkpwd
 *)
 (*
 (* Failure! Secret variable access *)
 let trust pwd = {
-  let secret pass = "abcd";
+  let secret pass = "abcd" in
 
-  let fun checkpwd (guess : string) : bool = pass = guess;
+  let fun checkpwd (guess : string) : bool = pass = guess in
   handle: {checkpwd}
 } in pwd.pass
 *)
@@ -21,9 +21,9 @@ let trust pwd = {
 (* a variable defined inside the block requires an external var *)
 let a = "pippo" in 
 let trust pwd = {
-  let secret pass = "abcd";
+  let secret pass = "abcd" in
 
-  let fun checkpwd (guess : string) : bool = a = guess;
+  let fun checkpwd (guess : string) : bool = a = guess in
   handle: {checkpwd}
 } in pwd.checkpwd "tt"
 *)
@@ -32,9 +32,9 @@ let trust pwd = {
 (*
 let a = "pippo" in 
 let trust pwd = {
-  let secret pass = "abcd";
+  let secret pass = "abcd" in
 
-  let fun checkpwd (guess : string) : bool = a = guess;
+  let fun checkpwd (guess : string) : bool = a = guess in
   handle: {checkpwd}
 } in pwd.a "tt"
 *)
@@ -42,9 +42,9 @@ let trust pwd = {
 (* FAILURE! pass is still secret even if has not keyword (i.e. is not handled) *)
 (*
 let trust pwd = {
-  let pass = "abcd";
+  let pass = "abcd" in
 
-  let fun checkpwd (guess : string) : bool = guess = pass;
+  let fun checkpwd (guess : string) : bool = guess = pass in
   handle: {checkpwd}
 } in pwd.pass
  *)
@@ -52,9 +52,9 @@ let trust pwd = {
  (* syntax error: handle list canno be empty *)
  (*
  let trust pwd = {
-  let pass = "abcd";
+  let pass = "abcd" in
 
-  let fun checkpwd (guess : string) : bool = guess = pass;
+  let fun checkpwd (guess : string) : bool = guess = pass in
   handle: {}
 } in pwd
  *)
@@ -62,10 +62,10 @@ let trust pwd = {
 (* more functions into handle *)
 (*
  let trust pwd = {
-  let pass = "abcd";
+  let pass = "abcd" in
 
-  let fun checkpwd (guess : string) : bool = guess = pass;
-  let fun checkpwd2 : bool = true;
+  let fun checkpwd (guess : string) : bool = guess = pass in
+  let fun checkpwd2 : bool = true in
   handle: {checkpwd; checkpwd2}
 } in pwd.checkpwd2
 *)

@@ -10,7 +10,7 @@
 		tbl
 
 	let keyword_table =
-		create_hashtable 22 [
+		create_hashtable 25 [
 			("if", 	IF);
 			("then",THEN);
 			("else",ELSE);
@@ -34,6 +34,7 @@
       ("trust", TRUST);
       ("secret",  SECRET);
       ("handle",  HANDLE);
+      ("plugin", PLUGIN);
 		]
 
 }
@@ -47,7 +48,7 @@ let float 	= digit+ '.'? digit* (('e'|'E') sign? digit+)? |
 let bool 		= ("true"|"false")
 let char		= "'" [^ '''] "'"
 let string  = "\"" [^ '"']* "\""
-let id 			= ['a'-'z' 'A'-'Z' '_']['a'-'z' '0'-'9' '_']*
+let id 			= ['a'-'z' 'A'-'Z' '_']['a'-'z' 'A'-'Z' '0'-'9' '_']*
 let white   = [' ' '\t']
 
 rule tokenize = parse
@@ -71,6 +72,7 @@ rule tokenize = parse
   | '-'               { MINUS }
   | '*'               { TIMES }
   | '/'               { DIV }
+  | '%'               { MOD }
   | "+."              { FPLUS }
   | "-."              { FMINUS }
   | "*."              { FTIMES }

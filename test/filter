@@ -1,0 +1,17 @@
+let trust pwd = {
+  let secret pass = "abcd" in 
+
+  let fun checkpwd (guess : string) : bool = 
+    pass = guess in
+  handle: {checkpwd}
+} in
+
+let plugin myFilter = {
+  let fun filter (predicate : string -> bool) (l : string list) : string list = 
+    if is_empty l then [] 
+    else 
+      if predicate (hd l) then (hd l)::(filter predicate (tl l))
+      else (filter predicate (tl l))
+} in 
+
+myFilter.filter (pwd.checkpwd) ["pippo", "abc", "abcd", "pluto", "paperino"]

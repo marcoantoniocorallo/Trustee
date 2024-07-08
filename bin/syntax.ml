@@ -49,6 +49,7 @@ type exp =
 	| Secret of located_exp														(* Secret expression *)
 	| Handle of located_exp list											(* Interface fn between trusted and untrusted code *)
 	| Access of located_exp * located_exp							(* Access to trusted block name *)
+	| Plugin of located_exp														(* Untrusted block of code and data *)
 	[@@deriving show]
 
 and located_exp = exp located                 			(* ( exp * location ) *)
@@ -65,9 +66,9 @@ and ttype =
   | Tfun of ttype * ttype                           (*  Type of function *)
   | Ttuple of ttype list                        		(*  Compound type: tuple *)
   | Tlist of ttype option                           (*  Compound type: list *)
-
-	|	TtrustedBlock of (ttype * confidentiality) env	(*	Assoc to each name a ttype 
-																										 *	and a confidentiality level *)
+	(* Block of data and code are associated to type environments *)
+	|	TtrustedBlock of ((ttype * confidentiality)	env	[@opaque])
+	| TuntrustedBlock of (ttype	env	[@opaque])				
 	[@@deriving show]
 
 (** Expressible and denotable values. *)
@@ -81,8 +82,9 @@ and value =
 	| Closure of string * string * located_exp * value env	(*	(f, x, fBody, fDeclEnv) *)
 	| Tuple of value list   																(*	Heterogeneous fixed-length tuple of values*)
 	| ListV of value list   																(*	Homogeneous list of values *)
-	
-	| TrustedBlock of ((value * confidentiality)	env	[@opaque])				
+	(* Block of data and code are associated to value environments *)
+	| TrustedBlock of ((value * confidentiality) env	[@opaque])
+	| UntrustedBlock of (value env	[@opaque])		
 	[@@deriving show]
 
 and confidentiality = 

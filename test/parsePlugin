@@ -1,0 +1,43 @@
+(*
+(* Not Empty! *)
+let plugin p = {
+
+} in p 
+*)
+
+
+(*
+let plugin p = {
+    let s = "s"
+} in p 
+*)
+
+(*
+let plugin p = {
+    let s = "s" in
+    let fun f (x : int) : int = x+1
+} in p.f 5
+*)
+
+(* secret not allowed! *)
+(*
+let plugin p = {
+    let secret s = "s" 
+} in p
+*)
+
+(* nested blocks! *)
+(*
+let plugin p = {
+    let trust t = { let fun f : int = 1 in handle:{f} }
+} in p
+*)
+
+(* again nested blocks *)
+(*
+let plugin p = {
+    let x = let trust t = { let fun f : int = 1 in handle:{f} } in 
+    let fun f : trusted_block = t in f
+} in p
+*)
+

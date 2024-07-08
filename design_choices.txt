@@ -21,3 +21,6 @@
 - Blocco handle mandatory
 
 - Trusted Block value non-printable (opaque)
+
+- Trusted blocks e plugin NON sono cittadini di prima classe! 
+  i.e. Non possono essere usati come argomenti di funzioni o restituiti

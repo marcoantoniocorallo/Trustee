@@ -1,7 +1,7 @@
 (*
 let trust pwd = {
-    let secret pass = "abcd";
-    let fun checkpwd (guess : string) : bool = pass = guess;
+    let secret pass = "abcd" in 
+    let fun checkpwd (guess : string) : bool = pass = guess in 
     handle: {checkpwd}
 } in pwd
 *)
@@ -9,8 +9,8 @@ let trust pwd = {
 (* Failure ! checkpw is not declared *)
 (*
 let trust pwd = {
-    let secret pass = "abcd";
-    let fun checkpwd (guess : string) : bool = pass = guess;
+    let secret pass = "abcd" in 
+    let fun checkpwd (guess : string) : bool = pass = guess in 
     handle: {checkpw}
 } in pwd
 *)
@@ -18,9 +18,9 @@ let trust pwd = {
 (*
 (* FAILURE !!! Handle accepts only fn names *)
 let trust pwd = {
-    let secret pass = "abcd";
-    let id = "pippo";
-    let fun checkpwd (guess : string) : bool = pass = guess;
+    let secret pass = "abcd" in 
+    let id = "pippo" in 
+    let fun checkpwd (guess : string) : bool = pass = guess in 
     handle: {checkpwd; (let x = "pippo" in x); [1, 2, 3]}
 } in pwd
 *)
@@ -28,11 +28,11 @@ let trust pwd = {
 (* (* FAILURE !!! NO NESTED BLOCKS *)
 let trust pwd = {
   let trust deeper = {
-    let secret pass = "abcd";
+    let secret pass = "abcd" in 
 
-    let fun checkpwd (guess : string) : bool = password = guess;
+    let fun checkpwd (guess : string) : bool = password = guess in 
     handle: {checkpwd; (let x = "pippo" in x); [1, 2, 3]}   
-  };
+  } in 
   handle: {[1,2]}
 } in pwd
 *)
@@ -42,12 +42,12 @@ let trust pwd = {
   let e = 
     let f = 
       let trust deeper = {
-        let secret pass = "abcd";
+        let secret pass = "abcd" in 
 
-        let fun checkpwd (guess : string) : bool = password = guess;
+        let fun checkpwd (guess : string) : bool = password = guess in 
         handle: {checkpwd; (let x = "pippo" in x); [1, 2, 3]}   
       } in f 
-    in e;
+    in e in 
   handle: {[1,2]}
 } in pwd
 *)
@@ -55,9 +55,9 @@ let trust pwd = {
 (*
 (* FAILURE !!! Only data can be secret *)
 let trust pwd = {
-  let secret pass = "abcd";
+  let secret pass = "abcd" in 
 
-  let secret fun checkpwd (guess : string) : bool = pass = guess;
+  let secret fun checkpwd (guess : string) : bool = pass = guess in 
   handle: {[1,2]}
 } in pwd
 *)
@@ -65,9 +65,9 @@ let trust pwd = {
 (*
 (* Failure! only fn names in handle *)
 let trust pwd = {
-  let secret pass = "abcd";
+  let secret pass = "abcd" in 
 
-  let fun checkpwd (guess : string) : bool = pass = guess;
+  let fun checkpwd (guess : string) : bool = pass = guess in 
   handle: {pass}
 } in pwd
 *)
@@ -76,20 +76,20 @@ let trust pwd = {
 (* Failure! Handled Functions must be declared inside the block *)
 let fun f (x : int) : int = x + 1 in 
 let trust pwd = {
-  let secret pass = "abcd";
+  let secret pass = "abcd" in 
 
-  let fun checkpwd (guess : string) : bool = pass = guess;
+  let fun checkpwd (guess : string) : bool = pass = guess in 
   handle: {f}
 } in pwd
 *)
 
 (* Failure! An identifier was expected *)
 (*
-let fun f (x : int) : int = x + 1 in 
+let fun f (x : int) : int = x + 1 in
 let trust pwd = {
-  let secret pass = "abcd";
+  let secret pass = "abcd" in 
 
-  let fun checkpwd (guess : string) : bool = pass = guess;
+  let fun checkpwd (guess : string) : bool = pass = guess in
   handle: {(lambda : (string -> bool) -> checkpwd)}
 } in pwd
 *)
@@ -98,15 +98,15 @@ let trust pwd = {
 (*
 let fun f (x : int) : int = x + 1 in 
 let trust pwd = {
-  let secret pass = "abcd";
+  let secret pass = "abcd" in
 
-  let fun checkpwd (guess : string) : bool = pass = guess;
+  let fun checkpwd (guess : string) : bool = pass = guess in
 } in pwd
 *)
 
 let trust pwd = {
-  let secret pass = "abcd";
+  let secret pass = "abcd" in 
 
-  let fun checkpwd (guess : string) : bool = pass = guess;
+  let fun checkpwd (guess : string) : bool = pass = guess in 
   handle: {checkpwd}
-} in pwd
+} in pwd.checkpwd

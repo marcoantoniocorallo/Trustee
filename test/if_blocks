@@ -1,0 +1,13 @@
+let trust pwd = {
+  let secret pass = "abcd" in 
+
+  let fun checkpwd (guess : string) : bool = pass = guess in 
+  handle: {checkpwd}
+} in 
+let trust t = { 
+    let secret pwd = "pwd" in 
+    let fun f : bool = false in 
+    handle:{f} 
+} in 
+let b = if (get_int() = 1) then t else pwd
+in b.f

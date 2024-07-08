@@ -30,6 +30,7 @@ let rec string_of_value (v : value) : string = match v with
   | ListV(c) -> "[ "^(List.map string_of_value c |> String.concat ", ")^" ]"
   | Closure(f, _, _, _) -> "Closure of "^f
   | TrustedBlock(_) -> "~Trusted Block~"
+  | UntrustedBlock(_)->"<Plugin code>"
 ;;
 
 (** string_of_ttype t: returns a string s representing t
@@ -47,6 +48,7 @@ let rec string_of_ttype (t : ttype) : string = match t with
   | Ttuple tt -> List.map string_of_ttype tt |> String.concat " * "
   | Tlist tt -> (if (Option.is_some tt) then (string_of_ttype (Option.get tt)) else "empty")^" list"
   | TtrustedBlock(_) -> "Trusted Block type"
+  | TuntrustedBlock(_) -> "Plugin type"
 ;;
 
 (** string_of_position p returns a string representing the position p
