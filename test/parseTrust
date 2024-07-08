@@ -104,9 +104,35 @@ let trust pwd = {
 } in pwd
 *)
 
+(*
 let trust pwd = {
   let secret pass = "abcd" in 
 
   let fun checkpwd (guess : string) : bool = pass = guess in 
   handle: {checkpwd}
 } in pwd.checkpwd
+*)
+
+(* Cannot have nested blocks *)
+(*
+let trust pwd = {
+  let secret pass = "abcd" in 
+  let plugin p = { let s="s" } in 
+  let fun checkpwd (guess : string) : bool = pass = guess in 
+  handle: {checkpwd}
+} in pwd.checkpwd
+*)
+
+(* Again nested blocks *)
+(*
+let trust pwd = {
+  let secret pass = "abcd" in 
+  let pippo = "hello" in 
+    let pluto = "world" in 
+      let fun f (x : int) : int = x+1 in 
+        let plugin p = { let s="s" } in 
+  let xx = pippo^pluto in 
+  let fun checkpwd (guess : string) : bool = pass = guess in 
+  handle: {checkpwd}
+} in pwd.checkpwd
+*)

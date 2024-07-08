@@ -1,0 +1,1 @@
+let f = if (get_int()=0) then print_string else print_int in f
