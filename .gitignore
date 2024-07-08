@@ -3,3 +3,4 @@ _build/
 .vscode/
 TFhree
 todo
+design_choices.txt

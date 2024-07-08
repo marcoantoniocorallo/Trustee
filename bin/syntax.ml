@@ -81,8 +81,8 @@ and value =
 	| Closure of string * string * located_exp * value env	(*	(f, x, fBody, fDeclEnv) *)
 	| Tuple of value list   																(*	Heterogeneous fixed-length tuple of values*)
 	| ListV of value list   																(*	Homogeneous list of values *)
-
-	| TrustedBlock of (value * confidentiality)	env					(*	Trusted block value *)
+	
+	| TrustedBlock of ((value * confidentiality)	env	[@opaque])				
 	[@@deriving show]
 
 and confidentiality = 

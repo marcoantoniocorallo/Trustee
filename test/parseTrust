@@ -93,3 +93,20 @@ let trust pwd = {
   handle: {(lambda : (string -> bool) -> checkpwd)}
 } in pwd
 *)
+
+(* Syntax error (handle expected) *)
+(*
+let fun f (x : int) : int = x + 1 in 
+let trust pwd = {
+  let secret pass = "abcd";
+
+  let fun checkpwd (guess : string) : bool = pass = guess;
+} in pwd
+*)
+
+let trust pwd = {
+  let secret pass = "abcd";
+
+  let fun checkpwd (guess : string) : bool = pass = guess;
+  handle: {checkpwd}
+} in pwd

@@ -6,6 +6,8 @@
   comunque il problema. Quindi ho preferito avere categorie sintattiche più semplici (e in minor numero)
   e gestirlo durante la fase di type checking
 
+- la keyword "secret" è invece utilizzabile solo all'interno di un blocco trust
+
 - Ogni dichiarazione (Let ... ) all'interno di un blocco trusted è privata by-default;
   Le funzioni all'interno di un costrutto Handle vengono poi ri-aggiunte all'ambiente con qualificatore
   Public, sfruttando lo shadowing
@@ -15,3 +17,7 @@
 - Le funzioni dichiarate all'interno di un blocco handle devono essere già state definite nel blocco
   e devono quindi avere un nome. 
   In particolare, nel blocco handle si possono solo inserire nomi di funzioni, non altre espressioni
+
+- Blocco handle mandatory
+
+- Trusted Block value non-printable (opaque)
