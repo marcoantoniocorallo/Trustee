@@ -237,3 +237,4 @@ let env =
 	print_char ::
 	print_bool ::
 	print_string :: []
+	|> List.map ( fun (id, v) -> (id, (v, Untaint)) )

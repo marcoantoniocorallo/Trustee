@@ -71,3 +71,7 @@ let string_of_loc (startp, endp) =
   let ep = string_of_position endp in
   Printf.sprintf "%s-%s" sp ep
 ;;
+
+let get_value (vt : vt) = fst vt;;
+
+let get_taint (vt : vt) = snd vt;;

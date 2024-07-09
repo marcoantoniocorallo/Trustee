@@ -17,3 +17,5 @@ exception Binding_Error of string;;
 exception IO_Type_Error of string;;
 
 exception Access_Control_Error of string;;
+
+exception Security_Error of string;;

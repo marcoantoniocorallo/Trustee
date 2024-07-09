@@ -79,15 +79,25 @@ and value =
 	| Float of float
 	| Char of char
 	| String of string
-	| Closure of string * string * located_exp * value env	(*	(f, x, fBody, fDeclEnv) *)
+	| Closure of string * string * located_exp * vt env			(*	(f, x, fBody, fDeclEnv) *)
 	| Tuple of value list   																(*	Heterogeneous fixed-length tuple of values*)
 	| ListV of value list   																(*	Homogeneous list of values *)
 	(* Block of data and code are associated to value environments *)
-	| TrustedBlock of ((value * confidentiality) env	[@opaque])
-	| UntrustedBlock of (value env	[@opaque])		
+	| TrustedBlock of ((vt * confidentiality) env	[@opaque])
+	| UntrustedBlock of (vt env	[@opaque])		
 	[@@deriving show]
 
 and confidentiality = 
 	| Private
 	| Public
+	[@@ deriving show]
+
+and taintness = 
+	| Taint
+	| Untaint
+
+and vt = (value * taintness)
 ;;
+
+let (++) (t1 : taintness) (t2 : taintness) : taintness = 
+	if t1 = t2 then t1 else Untaint;;

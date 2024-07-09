@@ -37,3 +37,12 @@
   sul tipo di espressione parsata: solo la dichiarazione di un plugin può essere parsata!
 
 - Nota: INCLUDE fa preprocessing, parsa il file e lo carica!
+
+- Nella mia visione di plugin, questi sono blocchi di codice (dati + funzioni) completamente accessibili
+  Un plugin non fornisce una routine, ma un insieme di routine, come una libreria (esterna e non-fidata)
+  Immagino che quando si scarichi/acquisti un plugin, questo sia corredato da un insieme di informazioni
+  plugin filter:
+  @provides string_f : (string -> bool) -> string list -> string list 
+            int_f : (int -> bool) -> int list -> int list
+            author : string
+            :
