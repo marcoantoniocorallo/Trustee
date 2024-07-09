@@ -53,7 +53,8 @@
 %token PROJ
 %token CONS_OP "::" HEAD "hd" TAIL "tl" IS_EMPTY
 %token COMMA "," COLON ":" SEMICOLON ";" ARROW "->" DOT "."
-%token TRUST  SECRET  HANDLE  PLUGIN
+%token TRUST  SECRET  HANDLE  PLUGIN INCLUDE
+%token <Syntax.located_exp>PARSED
 %token EOF
 
 (** 
@@ -131,6 +132,9 @@ expr:
 
 | IS_EMPTY l = simple_expr
     { IsEmpty(l) |@| $loc }
+
+| INCLUDE e = PARSED
+    { e }
 
 let_expr:
 | id = ID t = option(preceded(":", ptype)) "=" e1 = expr

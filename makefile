@@ -2,6 +2,8 @@ all: build
 
 build:
 	dune build
+	mkdir plugin
+	cp -fr test/plugin/* ./plugin
 	cp -f _build/default/bin/main.exe ./TFhree
 
 install: build 
@@ -16,5 +18,6 @@ clean:
 	rm -fr _build
 	rm -fr _install
 	rm -f ./TFhree
+	rm -fr plugin
 
 .PHONY: all build install clear clean

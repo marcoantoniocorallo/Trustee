@@ -1,0 +1,10 @@
+// let p = include <test/parsePlugin> in p // no permissions!
+// let p = include <plugin> in p // not a file
+// let p = include <plugin/w> in p // no such file
+// let p = include <plugin/../test/parsePlugin> in p // nope!
+// let p = include<plugin/ps/p> in p //nope!
+
+// let p = include <plugin/p> in p
+// let p = include <p> in p
+
+let p = include <truste> in p

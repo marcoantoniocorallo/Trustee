@@ -35,6 +35,7 @@
       ("secret",  SECRET);
       ("handle",  HANDLE);
       ("plugin", PLUGIN);
+      ("include", INCLUDE);
 		]
 
 }
@@ -61,6 +62,20 @@ rule tokenize = parse
 												try Hashtbl.find keyword_table word
 												with Not_found -> ID word
 											}
+  | "<" ( [^ '\n' '>']* as filename) '>'
+                      { (* can include only files into the plugin dir! *)
+                        let substr = String.split_on_char '/' filename in 
+                        match substr with 
+                        | [x] -> 
+                          let lb = Lexing.from_channel (open_in ("plugin/"^x)) in
+                          let p = Parser.main tokenize lb in
+                          PARSED p
+                        | x::_::[] when x = "plugin" -> 
+                          let lb = Lexing.from_channel (open_in filename) in
+                          let p = Parser.main tokenize lb in
+                          PARSED p
+                        | _ -> raise(Access_Control_Error("Include: you can only specify a file into the plugin dir."))
+                      }
   | '!'               { NOT }
   | "&&"              { AND }
   | "||"              { OR }

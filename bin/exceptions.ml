@@ -15,3 +15,5 @@ exception Type_system_Failed of string;;
 exception Binding_Error of string;;
 
 exception IO_Type_Error of string;;
+
+exception Access_Control_Error of string;;

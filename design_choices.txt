@@ -24,3 +24,15 @@
 
 - Trusted blocks e plugin NON sono cittadini di prima classe! 
   i.e. Non possono essere usati come argomenti di funzioni o restituiti
+  Non sarebbe complicato estendere il linguaggio per trattare come first-class citizen i blocchi,
+  basterebbe equipaggiarlo di type annotations, definire la relazione di ordinamento tra tipi <=
+  in modo pointwise (field-per-field)
+
+- mostrare la grammatica del linguaggio e dei blocchi
+
+- I plugin possono essere inclusi, ma per rafforzare l'access control la direttiva include 
+  prende solo nomi di files dentro plugin.
+
+- La direttiva include fa dei controlli sulla cartella sorgente del file da includere, ma il file
+  viene parsato normalmente, dunque non vi sono vincoli su ciò che si può "includere"...
+  Il file può contenere anche espressioni normali o trusted block, vengono parsati normalmente.

@@ -6,12 +6,6 @@ let trust pwd = {
   handle: {checkpwd}
 } in
 
-let plugin myFilter = {
-  let fun filter (predicate : string -> bool) (l : string list) : string list = 
-    if is_empty l then [] 
-    else 
-      if predicate (hd l) then (hd l)::(filter predicate (tl l))
-      else (filter predicate (tl l))
-} in 
+let filter = include <filter> in 
 
-myFilter.filter (pwd.checkpwd) ["pippo", "abc", "abcd", "pluto", "paperino"]
+filter.string_f (pwd.checkpwd) ["pippo", "abc", "abcd", "pluto", "paperino"]

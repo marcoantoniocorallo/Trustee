@@ -41,3 +41,7 @@ let plugin p = {
 } in p
 *)
 
+let plugin p = {
+    let s = "s" in
+    let fun f (x : int) : int = x+1
+} in p
