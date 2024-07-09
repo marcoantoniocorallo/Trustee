@@ -2,7 +2,7 @@ all: build
 
 build:
 	dune build
-	mkdir plugin
+	mkdir plugin -p
 	cp -fr test/plugin/* ./plugin
 	cp -f _build/default/bin/main.exe ./TFhree
 
