@@ -39,8 +39,7 @@ let rec eval ?(into_block=false) (e : located_exp) (env : vt env) (t : taintness
 		| Bool true -> let v2, t2 =  eval ~into_block:into_block e2 env t in v2, t1 ++ t2
 		| Bool false -> let v3, t3 = eval ~into_block:into_block e3 env t in v3, t1 ++ t3
 		| _ ->  raise (Type_system_Failed("eval:If non-bool guard - "
-            ^(string_of_value v1)^" at Token: "^(string_of_loc (e.loc) ) ) )
-		)
+            ^(string_of_value v1)^" at Token: "^(string_of_loc (e.loc) ) ) ) )
 	| Fun(f, x, _, fBody) -> Closure(f, x, fBody, env), t
 	| Call(eFun, eArg) ->
 		let fClosure, f_t = eval ~into_block:into_block eFun env t in
@@ -53,8 +52,7 @@ let rec eval ?(into_block=false) (e : located_exp) (env : vt env) (t : taintness
 				let f_res, t_res = eval ~into_block:into_block fBody fBodyEnv t in 
 				f_res, t_res ++ f_t ++ xTaint
 			| _ ->  raise (Type_system_Failed("eval:Call: a function was expected! "
-							^(string_of_value fClosure)^" at Token: "^(string_of_loc (e.loc) ) ) )
-			)
+							^(string_of_value fClosure)^" at Token: "^(string_of_loc (e.loc) ) ) ) )
 	| Tup(tuple) ->
 		let evaluateTuple tup = 
 			let rec f tup acc taint = match tup with
@@ -70,8 +68,7 @@ let rec eval ?(into_block=false) (e : located_exp) (env : vt env) (t : taintness
     (match tuple, index with 
     | Tuple(tup), Int n -> get tup n, tt ++ it
     | _, _ -> raise (Type_system_Failed("eval:Proj a tuple and an integer was expected - "
-    ^(string_of_value tuple)^" - "^(string_of_value index)^" at Token: "^(string_of_loc (e.loc) ) ) )
-		)
+    ^(string_of_value tuple)^" - "^(string_of_value index)^" at Token: "^(string_of_loc (e.loc) ) ) ) )
 	| Lst(list) -> 
 		let evaluateList l = 
 			let rec f l acc taint = match l with
@@ -107,14 +104,11 @@ let rec eval ?(into_block=false) (e : located_exp) (env : vt env) (t : taintness
 		| ListV([]) -> Bool(true), t'
 		| ListV(_) ->  Bool(false), t'
 		| _ -> raise (Type_system_Failed("eval:IsEmpty - "^(string_of_value list)
-						^" at Token: "^(string_of_loc (e.loc) ) ) )
-		)
+						^" at Token: "^(string_of_loc (e.loc) ) ) ) )
 	| NativeFunction(f, name_arg) ->
 		( match name_arg with
 		| Some x -> (* print primitives *)
-			let v, t = lookup env x in 
-			if t = Untaint then f v, t
-			else raise(Security_Error("(Possible) Confidential data cannot be exposed."))
+			let v, t = lookup env x in f v, t
 		| None	 -> (* get primitives *)
 			f Unit, Taint 
 		)
@@ -123,12 +117,14 @@ let rec eval ?(into_block=false) (e : located_exp) (env : vt env) (t : taintness
 		else 
 			if t = Taint then raise (Security_Error("(Possible) malicious access to trusted block. Abort."))
 			else 
-				let v' = eval_trusted b env [] t in 
-				TrustedBlock(v'), Untaint (* critical choice *)
-	| Access(tb, field) -> (* makes sense ??? *)
+				let v' = eval_trusted b env [] Untaint in 
+				TrustedBlock(v'), t
+	| Access(tb, field) -> 
 		let tbv, _ =  eval ~into_block:into_block tb env t in 
 		( match tbv, field.value with 
-		| TrustedBlock(tb_env), Var(id) -> List.assoc id tb_env |> fst
+		| TrustedBlock(tb_env), Var(id) -> 
+			if t = Taint then raise (Security_Error("(Possible) malicious access to trusted block. Abort."))
+			else List.assoc id tb_env |> fst
 		| UntrustedBlock(b_env), Var(id) -> List.assoc id b_env
 		| _,_ -> raise(Type_system_Failed("Access op. with wrong types at: "^(string_of_loc e.loc)))
 		)
@@ -139,18 +135,19 @@ let rec eval ?(into_block=false) (e : located_exp) (env : vt env) (t : taintness
 	| Plugin(e) ->
 		if into_block then raise (Type_Error("Cannot have nested blocks."))
 		else
-			let v' = eval_untrusted e env [] t in 
-			UntrustedBlock(v'), Taint
+			let v' = eval_untrusted e env [] Taint in 
+			UntrustedBlock(v'), t
 
 (* Evaluates a trusted block of expression to an <ide -> value * confidentiality> environment 
  * note: the only constructs possible in a trusted block are (also secret) declaration and handle
  *)
 and eval_trusted (e : located_exp) (env : vt env) (tb : (vt * confidentiality) env) (t : taintness) : (vt * confidentiality) env = 
+	if t = Taint then raise(Security_Error("Trusted block in taint status. Abort."));
 	match e.value with
 	| Let(x, _, eRhs, letBody) -> (* evaluates rhs, adds to env and tb and eval(_trusted) the body *)
 		let xVal = 
 			( match eRhs.value with
-			| Secret(s) -> let v, _ = eval ~into_block:true s env t in v, Taint
+			| Secret(s) -> let v, _ = eval ~into_block:true s env t in v, t
 			| Trust(_) -> raise (Type_system_Failed("Cannot have nested blocks."))
 			| _ -> eval ~into_block:true eRhs env t
 			) in 

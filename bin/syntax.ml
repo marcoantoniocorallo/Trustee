@@ -100,4 +100,4 @@ and vt = (value * taintness)
 ;;
 
 let (++) (t1 : taintness) (t2 : taintness) : taintness = 
-	if t1 = t2 then t1 else Untaint;;
+	if t1 = t2 then t1 else Taint;;

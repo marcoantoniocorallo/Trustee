@@ -46,3 +46,5 @@
             int_f : (int -> bool) -> int list -> int list
             author : string
             :
+
+- Includere nelle design choices le scelte di valutazione della taintness per ogni espressione

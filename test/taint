@@ -1,0 +1,17 @@
+// taint input, but prints (no data leakage)
+// let e = get_string() in print_string e 
+
+// print_string "pippo" // no probs
+
+// da chiarire
+(*
+let filter = include <filter> in 
+filter.int_f (lambda (x:int) : bool -> x%2 = 0) [1, 2, 3]
+*)
+
+let trust pwd = {
+  let secret pass = "abcd" in 
+
+  let fun checkpwd (guess : string) : bool = pass = guess in 
+  handle: {checkpwd}
+} in pwd.checkpwd "abcd"
