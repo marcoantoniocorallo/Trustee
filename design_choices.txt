@@ -48,3 +48,11 @@
             :
 
 - Includere nelle design choices le scelte di valutazione della taintness per ogni espressione
+
+- Se dovesse chiederlo: la DTA è fatta a run-time (e non a type-checking, ammess che si possa) perchè
+  le assert lavorano sul run-time, quindi ci interessa avere le informazioni sulla taintness a rt
+
+- I controlli sugli accessi e la visibilità degli attributi secret sono statici:
+  nel type checking contrlliamo che dato un blocco trusted, solo funzioni vengano esportate,
+  che non si tenti di accedere a variabili secret e che all'interno di blocchi trusted non si acceda
+  a plugin.

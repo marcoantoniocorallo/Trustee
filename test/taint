@@ -9,6 +9,18 @@ let filter = include <filter> in
 filter.int_f (lambda (x:int) : bool -> x%2 = 0) [1, 2, 3]
 *)
 
+// cannot access to plugin from inside a trusted block
+(*
+let p = include <p> in 
+let trust pwd = {
+  let secret pass = "abcd" in 
+  let f = p.f in 
+  let fun checkpwd (guess : string) : bool = pass = guess in 
+  handle: {checkpwd}
+} in pwd.checkpwd "abcd"
+*)
+
+
 let trust pwd = {
   let secret pass = "abcd" in 
 

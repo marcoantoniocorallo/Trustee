@@ -43,8 +43,10 @@ let type_env = [
   "print_string", Tfun(Tstring, Tunit);
 ]
 
+type block = No | Trusted | Untrusted;;
+
 (** Typing rule in a given type environment gamma *)
-let rec type_of ?(into_block=false) (gamma : ttype env) (e : located_exp) : ttype =
+let rec type_of ?(into_block=No) (gamma : ttype env) (e : located_exp) : ttype =
   match e.value with
   | Empty -> Tunit
   | CstI(_) -> Tint
@@ -185,7 +187,7 @@ let rec type_of ?(into_block=false) (gamma : ttype env) (e : located_exp) : ttyp
   | NativeFunction(_) ->
     raise ( Error_of_Inconsistence("type system: !!! Prohibit use of Native Functions !!! at: "^(string_of_loc e.loc)))
   | Trust(b) -> 
-    if into_block = false then TtrustedBlock(type_of_trusted b gamma [])
+    if into_block = No then TtrustedBlock(type_of_trusted b gamma [])
     else raise (Type_Error("Cannot have nested blocks."))
   | Access(tb, field) -> 
     ( match type_of ~into_block:into_block gamma tb, field.value with
@@ -197,13 +199,13 @@ let rec type_of ?(into_block=false) (gamma : ttype env) (e : located_exp) : ttyp
       | None -> raise (Type_Error("Field "^id^" not found in block at: "^(string_of_loc tb.loc)))
       )
     | TuntrustedBlock(env), Var(id) -> (* Whatever has been declared in a plugin can be accessed *)
+      if into_block = Trusted then raise(Security_Error("Cannot access to plugin from inside trusted blocks."));
       ( match List.assoc_opt id env with
       | Some t -> t
       | None -> raise (Type_Error("Field "^id^" not found in block at: "^(string_of_loc tb.loc)))
       )
     | _, Var(_) -> raise (Type_Error("A block was expected in access operation at: "^(string_of_loc tb.loc)))
-    | _, _ -> raise (Type_Error("An identifier was expected in access operation at: "^(string_of_loc field.loc)))
-    )
+    | _, _ -> raise (Type_Error("An identifier was expected in access operation at: "^(string_of_loc field.loc))) )
   | Secret(_) -> (* Is not possible to have secret data outside trusted blocks - syntax constraint *)
     raise (Error_of_Inconsistence("type_of: unexpected secret data outside trusted block: "
     ^(string_of_loc e.loc) ))
@@ -211,7 +213,7 @@ let rec type_of ?(into_block=false) (gamma : ttype env) (e : located_exp) : ttyp
     raise (Error_of_Inconsistence("type_of: unexpected handled exp outside trusted block: "
     ^(string_of_loc e.loc) ))
   | Plugin(e) ->
-    if into_block = false then TuntrustedBlock(type_of_plugin e gamma [])
+    if into_block = No then TuntrustedBlock(type_of_plugin e gamma [])
     else raise (Type_Error("Cannot have nested blocks."))
 
 (* Evaluates a trusted block of expression to an <ide -> ttype * confidentiality> environment 
@@ -223,7 +225,7 @@ and type_of_trusted (e : located_exp) (env : ttype env) (tb : (ttype * confident
     let t' = 
       ( match e1.value with
       | Secret(s) -> 
-        let ts = type_of ~into_block:true env s in
+        let ts = type_of ~into_block:Trusted env s in
         (match ts with  (* Only data can be secret *)
         | Tint
         | Tbool
@@ -235,7 +237,7 @@ and type_of_trusted (e : located_exp) (env : ttype env) (tb : (ttype * confident
         | _ -> raise (Type_Error("Only data can be secret. At: "^(string_of_loc s.loc)))
         )
       | Trust(_) -> raise (Type_Error("Cannot have nested blocks. At: "^(string_of_loc e.loc)))
-      | _ -> type_of ~into_block:true env e1
+      | _ -> type_of ~into_block:Trusted env e1
       ) in 
     (match t with 
     | Some tt -> if t' = tt then type_of_trusted e2 ((x,t')::env) ((x, (t',Private))::tb)
@@ -263,7 +265,7 @@ and type_of_trusted (e : located_exp) (env : ttype env) (tb : (ttype * confident
 and type_of_plugin (e : located_exp) (env : ttype env) (b : ttype env) : ttype env = 
   match e.value with 
   | Let(x, t, e1, e2) -> 
-    let t' = type_of ~into_block:true env e1 in 
+    let t' = type_of ~into_block:Untrusted env e1 in 
     (match t with 
     | Some tt -> if t' = tt then type_of_plugin e2 ((x,t')::env) ((x, t')::b)
       else raise(Type_Error("Bad type annotation at "^(string_of_loc (e.loc))))
