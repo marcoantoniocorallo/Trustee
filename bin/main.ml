@@ -3,6 +3,7 @@ open Utils;;
 open Type_system;;
 
 let eval code = 
+  print_endline (Syntax.show_located_exp code);
   let _ = type_check code in 
   print_endline (string_of_value (Interpreter.eval code)) 
 

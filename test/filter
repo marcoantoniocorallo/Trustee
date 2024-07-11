@@ -6,6 +6,5 @@ let trust pwd = {
   handle: {checkpwd}
 } in
 
-let filter = include <filter> in 
-
-filter.string_f (pwd.checkpwd) ["pippo", "abc", "abcd", "pluto", "paperino"]
+let filter = include <filter> in
+filter pwd.checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"]

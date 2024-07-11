@@ -123,11 +123,13 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : 
     let t1 = type_of ~into_block:into_block gamma e1 in
     let t2 = type_of ~into_block:into_block gamma e2 in
     ( match t1 with
+    | TuntrustedBlock(Tfun(tx, tr))
     | Tfun(tx, tr) as tfun ->
       if t2 <= tx then tr
       else raise (Type_Error("functional application: argument type mismatch"^(string_of_loc (e2.loc))
                   ^"function "^(string_of_ttype tfun)^" got "^(string_of_ttype t2)^" instead"))
-    | _ -> raise (Type_Error("application to a non functional value"^(string_of_loc (e2.loc))))
+    | other -> 
+      raise (Type_Error("Function was expected, got "^(string_of_ttype other)^" at: "^(string_of_loc (e1.loc))))
     )
   | Tup(tuple) ->
     let type_of_tuple t = 
@@ -214,6 +216,7 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : 
       | _ -> raise(Type_Error("A plugin must implement a function. At: "^(string_of_loc e.loc)))
       )
     else raise (Type_Error("Cannot have nested blocks."))
+
 
 (* Evaluates a trusted block of expression to an <ide -> ttype * confidentiality> environment 
  * note: the only constructs possible in a trusted block are (also secret) declaration and handle
