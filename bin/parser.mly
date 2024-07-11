@@ -140,6 +140,7 @@ expr:
       | _ -> raise(Exceptions.Type_Error("A plugin was expected in include statement at: "^(Utils.string_of_loc e.loc)))
     }
 
+
 let_expr:
 | id = ID t = option(preceded(":", ptype)) "=" e1 = expr
     { (id, t, e1) }
@@ -157,8 +158,8 @@ let_expr:
 | TRUST name = ID "=" "{" e = trust_expr "}"
     { (name, None, Trust(e) |@| $loc ) }
 
-| PLUGIN name = ID "=" "{" l = plg_expr
-    { (name, None, Plugin(l) |@| $loc ) }
+| PLUGIN name = ID "=" "{" e = expr "}"
+    { (name, None, Plugin(e) |@| $loc ) }
 
 (** simple_expr is a syntactical category used for disambiguing the grammar. *)
 simple_expr:
@@ -210,19 +211,6 @@ trust_expr:
   
 | HANDLE ":" e = delimited("{", separated_nonempty_list(";", simple_expr), "}")
     { Handle(e) |@| $loc }
-
-plg_expr:
-| LET e = let_expr IN e4 = plg_expr 
-    { 
-      let (e1, e2, e3) = e in
-      Let(e1, e2, e3, e4) |@| $loc
-    }
-
-| LET e = let_expr "}"
-    { 
-      let (e1, e2, e3) = e in
-      Let(e1, e2, e3, e3) |@| $loc
-    }
 
 (** Fun Call and composition *)
 (** The arg of the function is a simple_expr, that is an identifier, a literal,

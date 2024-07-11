@@ -6,5 +6,4 @@
 
 // let p = include <plugin/p> in p
 // let p = include <p> in p
-let p = include <nested> in p.f 5
 // let p = include <trust> in p // works only with plugins!

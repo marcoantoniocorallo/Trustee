@@ -68,7 +68,7 @@ and ttype =
   | Tlist of ttype option                           (*  Compound type: list *)
 	(* Block of data and code are associated to type environments *)
 	|	TtrustedBlock of ((ttype * confidentiality)	env	[@opaque])
-	| TuntrustedBlock of (ttype	env	[@opaque])				
+	| TuntrustedBlock of (ttype)				
 	[@@deriving show]
 
 (** Expressible and denotable values. *)
@@ -84,7 +84,7 @@ and value =
 	| ListV of value list   																(*	Homogeneous list of values *)
 	(* Block of data and code are associated to value environments *)
 	| TrustedBlock of ((vt * confidentiality) env	[@opaque])
-	| UntrustedBlock of (vt env	[@opaque])		
+	| UntrustedBlock of vt
 	[@@deriving show]
 
 and confidentiality = 

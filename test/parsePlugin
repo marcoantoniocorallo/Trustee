@@ -6,7 +6,7 @@ let plugin p = {
 *)
 
 
-(*
+(* // miss "in"
 let plugin p = {
     let s = "s"
 } in p 
@@ -16,13 +16,14 @@ let plugin p = {
 let plugin p = {
     let s = "s" in
     let fun f (x : int) : int = x+1
+in f
 } in p.f 5
 *)
 
 (* secret not allowed! *)
 (*
 let plugin p = {
-    let secret s = "s" 
+    let secret s = "s"  in
 } in p
 *)
 
@@ -30,18 +31,25 @@ let plugin p = {
 (*
 let plugin p = {
     let trust t = { let fun f : int = 1 in handle:{f} }
+    in t
 } in p
 *)
 
-(* again nested blocks *)
+// plugin code cannot use external variables
 (*
+let a = 5 in 
 let plugin p = {
-    let x = let trust t = { let fun f : int = 1 in handle:{f} } in 
-    let fun f : trusted_block = t in f
+    let s = 5 in
+    let fun f (x : int) : int = x+1
+    in (lambda (x : int) : int -> x + a)
 } in p
 *)
 
+(*
+// plugin code must be evaluated in a function
 let plugin p = {
-    let s = "s" in
+    let s = 5 in
     let fun f (x : int) : int = x+1
+    in s
 } in p
+*)

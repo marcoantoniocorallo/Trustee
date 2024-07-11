@@ -38,14 +38,12 @@
 
 - Nota: INCLUDE fa preprocessing, parsa il file e lo carica!
 
-- Nella mia visione di plugin, questi sono blocchi di codice (dati + funzioni) completamente accessibili
-  Un plugin non fornisce una routine, ma un insieme di routine, come una libreria (esterna e non-fidata)
+- Nella mia visione di plugin, questi sono blocchi di codice (dati + funzioni) inaccessibili.
+  Il codice del plugin viene valutato solo tramite apposita chiamata unsafe_eval
   Immagino che quando si scarichi/acquisti un plugin, questo sia corredato da un insieme di informazioni
   plugin filter:
   @provides string_f : (string -> bool) -> string list -> string list 
-            int_f : (int -> bool) -> int list -> int list
-            author : string
-            :
+  di controllare che venga utilizzato correttamente se ne occupa il type checker
 
 - Includere nelle design choices le scelte di valutazione della taintness per ogni espressione
 
@@ -56,3 +54,9 @@
   nel type checking contrlliamo che dato un blocco trusted, solo funzioni vengano esportate,
   che non si tenti di accedere a variabili secret e che all'interno di blocchi trusted non si acceda
   a plugin.
+
+- Trusted blocks non esegue plugin all'interno
+
+- Il codice plugin NON può accedere a variabili esterne.
+
+- I plugin devono essere valutati come funzioni

@@ -41,12 +41,12 @@ let type_env = [
   "print_bool", Tfun(Tbool, Tunit);
   "print_char", Tfun(Tchar, Tunit);
   "print_string", Tfun(Tstring, Tunit);
-]
+];;
 
 type block = No | Trusted | Untrusted;;
 
 (** Typing rule in a given type environment gamma *)
-let rec type_of ?(into_block=No) (gamma : ttype env) (e : located_exp) : ttype =
+let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : located_exp) : ttype =
   match e.value with
   | Empty -> Tunit
   | CstI(_) -> Tint
@@ -198,12 +198,6 @@ let rec type_of ?(into_block=No) (gamma : ttype env) (e : located_exp) : ttype =
       | Some (_, Public) -> raise(Type_system_Failed("type_of:access: found public non-function object; at "^(string_of_loc e.loc)))
       | None -> raise (Type_Error("Field "^id^" not found in block at: "^(string_of_loc tb.loc)))
       )
-    | TuntrustedBlock(env), Var(id) -> (* Whatever has been declared in a plugin can be accessed *)
-      if into_block = Trusted then raise(Security_Error("Cannot access to plugin from inside trusted blocks."));
-      ( match List.assoc_opt id env with
-      | Some t -> t
-      | None -> raise (Type_Error("Field "^id^" not found in block at: "^(string_of_loc tb.loc)))
-      )
     | _, Var(_) -> raise (Type_Error("A block was expected in access operation at: "^(string_of_loc tb.loc)))
     | _, _ -> raise (Type_Error("An identifier was expected in access operation at: "^(string_of_loc field.loc))) )
   | Secret(_) -> (* Is not possible to have secret data outside trusted blocks - syntax constraint *)
@@ -212,8 +206,13 @@ let rec type_of ?(into_block=No) (gamma : ttype env) (e : located_exp) : ttype =
   | Handle(_) -> (* Is not possible to have handled exp outside trusted blocks - syntax constraint *)
     raise (Error_of_Inconsistence("type_of: unexpected handled exp outside trusted block: "
     ^(string_of_loc e.loc) ))
-  | Plugin(e) ->
-    if into_block = No then TuntrustedBlock(type_of_plugin e gamma [])
+  | Plugin(e) -> (* eval in an empty env *)
+    if into_block = No then 
+      let v = type_of ~into_block:Untrusted start_env e in
+      (match v with
+      | Tfun(_) -> TuntrustedBlock(v)
+      | _ -> raise(Type_Error("A plugin must implement a function. At: "^(string_of_loc e.loc)))
+      )
     else raise (Type_Error("Cannot have nested blocks."))
 
 (* Evaluates a trusted block of expression to an <ide -> ttype * confidentiality> environment 
@@ -258,20 +257,6 @@ and type_of_trusted (e : located_exp) (env : ttype env) (tb : (ttype * confident
     (List.map (add_f) l)@tb
   | other ->	raise (Error_of_Inconsistence("type_of_trusted: unexpected construct! "
               ^(Syntax.show_exp other)^" at: "^(string_of_loc e.loc) ))
+;;
 
-(* Evaluates a plugin to an <ide -> ttype> environment 
- * note: the only constructs possible in a trusted block are declarations - syntax constraint
- *)
-and type_of_plugin (e : located_exp) (env : ttype env) (b : ttype env) : ttype env = 
-  match e.value with 
-  | Let(x, t, e1, e2) -> 
-    let t' = type_of ~into_block:Untrusted env e1 in 
-    (match t with 
-    | Some tt -> if t' = tt then type_of_plugin e2 ((x,t')::env) ((x, t')::b)
-      else raise(Type_Error("Bad type annotation at "^(string_of_loc (e.loc))))
-    | None -> type_of_plugin e2 ((x,t')::env) ((x, t')::b)
-    )
-  | _ -> b  (* recall: the only possible exp in a plugin are declarations; 
-              the other ones indicate the end of the block *)
-  ;;
 let type_check e = type_of type_env e

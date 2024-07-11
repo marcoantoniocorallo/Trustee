@@ -9,7 +9,7 @@ open Exceptions;;
 	Interpreter that implements dynamic taint analysis.
   Note: type annotations are here ignored: they are already checked by the type checker.
  *)
-let rec eval ?(into_block=false) (e : located_exp) (env : vt env) (t : taintness) : vt = 
+let rec eval ?(into_block=false) ?(start_env=(Native_functions.env)) (e : located_exp) (env : vt env) (t : taintness) : vt = 
 	match e.value with
 	| Empty -> Unit, t
 	| CstI i -> Int i, t
@@ -43,8 +43,8 @@ let rec eval ?(into_block=false) (e : located_exp) (env : vt env) (t : taintness
 	| Fun(f, x, _, fBody) -> Closure(f, x, fBody, env), t
 	| Call(eFun, eArg) ->
 		let fClosure, f_t = eval ~into_block:into_block eFun env t in
-		if f_t = Taint then raise(Security_Error("(Possible) malicious execution. Abort."))
-		else
+		(*if f_t = Taint then raise(Security_Error("(Possible) malicious execution. Abort."))
+		else*)
 			(match fClosure with
 			| Closure (f, x, fBody, fDeclEnv) ->
 				let xVal, xTaint = eval ~into_block:into_block eArg env t in
@@ -125,7 +125,6 @@ let rec eval ?(into_block=false) (e : located_exp) (env : vt env) (t : taintness
 		| TrustedBlock(tb_env), Var(id) -> 
 			if t = Taint then raise (Security_Error("(Possible) malicious access to trusted block. Abort."))
 			else List.assoc id tb_env |> fst
-		| UntrustedBlock(b_env), Var(id) -> List.assoc id b_env
 		| _,_ -> raise(Type_system_Failed("Access op. with wrong types at: "^(string_of_loc e.loc)))
 		)
 	| Secret(_) -> 
@@ -135,7 +134,7 @@ let rec eval ?(into_block=false) (e : located_exp) (env : vt env) (t : taintness
 	| Plugin(e) ->
 		if into_block then raise (Type_Error("Cannot have nested blocks."))
 		else
-			let v' = eval_untrusted e env [] Taint in 
+			let v' = eval ~into_block:true e start_env Taint in 
 			UntrustedBlock(v'), t
 
 (* Evaluates a trusted block of expression to an <ide -> value * confidentiality> environment 
@@ -163,19 +162,6 @@ and eval_trusted (e : located_exp) (env : vt env) (tb : (vt * confidentiality) e
 		(List.map (add_f) l)@tb
 	| other ->	raise (Error_of_Inconsistence("eval_trusted: unexpected construct! "
 							^(Syntax.show_exp other)^" at: "^(string_of_loc e.loc) ))
-
-(* Evaluates a trusted block of expression to an <ide -> value * confidentiality> environment 
-* note: the only constructs possible in a trusted block are (also secret) declaration and handle
-*)
-and eval_untrusted (e : located_exp) (env : vt env) (b : vt env) (t : taintness) : vt env = 
-	match e.value with
-	| Let(x, _, eRhs, letBody) -> 
-    let xVal = eval ~into_block:true eRhs env t in 
-		let letEnv = (x, xVal) :: env in
-		let b' = (x, xVal)::b in 
-		eval_untrusted letBody letEnv b' t
-  | _ -> b  (* recall: the only possible exp in a plugin are declarations; 
-              the other ones indicate the end of the block *)
 ;;
 
 let eval (e : located_exp) : value = 
