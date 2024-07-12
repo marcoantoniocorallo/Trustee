@@ -1,0 +1,19 @@
+(*
+let p = include <p> in 
+let trust pwd = {
+  let pass = "abcd" in
+  let _ = p 5 in // a function was expected, got plugin
+  let fun checkpwd (guess : string) : bool = guess = pass in
+  handle: {checkpwd}
+} in pwd
+*)
+
+(*
+let p = include <p> in 
+let trust pwd = {
+  let pass = "abcd" in
+  let _ = unsafe p 5 in // cannot access to plugin from inside trusted blocks
+  let fun checkpwd (guess : string) : bool = guess = pass in
+  handle: {checkpwd}
+} in pwd
+*)

@@ -62,4 +62,4 @@
 - I plugin devono essere valutati come funzioni
 
 - I plugin vengono invocati come normali funzioni, preceduti dalla keyword unsafe.
-  Se la keyword non viene utilizzata, il programma viene arrestato quando trova un plugin inatteso.
+  Se la keyword non viene utilizzata, il type checker fallisce perchè trova un plugin inatteso.

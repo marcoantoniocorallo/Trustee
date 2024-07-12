@@ -222,6 +222,7 @@ let rec type_of ?(into_block=No) ?(exec_plugin=false) ?(start_env=type_env) (gam
       )
     else raise (Type_Error("Cannot have nested blocks."))
   | ExecPlugin(e) -> 
+    if into_block = Trusted then raise(Security_Error("Cannot access to plugin from inside trusted blocks."));
     (match e.value with
     | Call(f,_) -> type_of ~into_block:into_block ~exec_plugin:true gamma f
     | _ -> raise(Error_of_Inconsistence("ExecPlugin of a non-call value! at: "^(string_of_loc e.loc)))
