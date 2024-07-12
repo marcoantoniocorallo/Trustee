@@ -43,7 +43,7 @@ let rec eval ?(into_block=false) ?(exec_plugin=false) ?(start_env=(Native_functi
 	| Fun(f, x, _, fBody) -> Closure(f, x, fBody, env), t
 	| Call(eFun, eArg) ->
 		(match eval ~into_block:into_block ~exec_plugin:exec_plugin eFun env t with
-		| Closure (f, x, fBody, fDeclEnv) as fClosure, f_t
+		| Closure (f, x, fBody, fDeclEnv) as fClosure, f_t 
 		| UntrustedBlock((Closure (f, x, fBody, fDeclEnv)) as fClosure, f_t), _ ->
 			if f_t = Taint && exec_plugin = false 
 				then raise(Security_Error("(Possible) malicious execution. Abort."));

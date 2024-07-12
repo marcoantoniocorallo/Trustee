@@ -2,4 +2,3 @@ let plugin p = {
     let fun f (x:int) : int = x+1 in f
 } in 
 unsafe (proj (1, "2", p) 2) 5
-// (proj (1, "2", p) 2) 5 // function was expected, got plugin

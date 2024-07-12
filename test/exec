@@ -1,4 +1,7 @@
 let plugin p = {
     let fun f (x:int) : int = x+1 in f
 } in 
-unsafe p 5
+// unsafe p 5
+// p 5 // cannot execute without unsafe
+// (lambda (f : int -> int) (x : int) : int -> f x) p 5 // cannot execute without unsafe
+unsafe (lambda (f : int -> int) (x : int) : int -> f x) p 5 // cannot execute without unsafe

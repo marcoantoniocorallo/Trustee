@@ -7,4 +7,5 @@ let plugin pwd = {
 } in
 
 let filter = include <filter> in
+// filter pwd ["pippo", "abc", "abcd", "pluto", "paperino"] // cannot exec without unsafe
 unsafe filter pwd ["pippo", "abc", "abcd", "pluto", "paperino"]

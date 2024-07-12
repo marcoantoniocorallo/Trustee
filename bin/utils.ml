@@ -75,3 +75,11 @@ let string_of_loc (startp, endp) =
 let get_value (vt : vt) = fst vt;;
 
 let get_taint (vt : vt) = snd vt;;
+
+(** return true if in the call e uses a plugin, false otherwise *)
+let rec plugin_in_call e : bool = 
+  match e with
+  | TuntrustedBlock(_) -> true
+  | Tfun(t1, t2)-> 
+    (plugin_in_call t1) || (plugin_in_call t2) 
+  | _ -> false

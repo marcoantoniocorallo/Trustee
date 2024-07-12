@@ -124,12 +124,14 @@ let rec type_of ?(into_block=No) ?(exec_plugin=false) ?(start_env=type_env) (gam
   | Call(e1, e2) ->
     let t1 = type_of~into_block:into_block ~exec_plugin:exec_plugin gamma e1 in
     let t2 = type_of~into_block:into_block ~exec_plugin:exec_plugin gamma e2 in
+    if (plugin_in_call t1 || plugin_in_call t2) && exec_plugin = false 
+      then raise(Type_Error("Cannot execute plugin without `unsafe`."))
+    else if exec_plugin = true && into_block = Trusted 
+      then raise(Security_Error("Cannot access to plugin from inside trusted blocks."))
+    else
     ( match t1 with
-    | TuntrustedBlock(Tfun(tx, tr) as tfun) when exec_plugin = true ->
-      if t2 <= tx then tr
-      else raise (Type_Error("functional application: argument type mismatch"^(string_of_loc (e2.loc))
-                  ^"function "^(string_of_ttype tfun)^" got "^(string_of_ttype t2)^" instead"))
-    | Tfun(tx, tr) as tfun ->
+    | Tfun(tx, tr) as tfun 
+    | TuntrustedBlock(Tfun(tx, tr) as tfun) ->
       if t2 <= tx then tr
       else raise (Type_Error("functional application: argument type mismatch"^(string_of_loc (e2.loc))
                   ^"function "^(string_of_ttype tfun)^" got "^(string_of_ttype t2)^" instead"))
@@ -224,7 +226,7 @@ let rec type_of ?(into_block=No) ?(exec_plugin=false) ?(start_env=type_env) (gam
   | ExecPlugin(e) -> 
     if into_block = Trusted then raise(Security_Error("Cannot access to plugin from inside trusted blocks."));
     (match e.value with
-    | Call(f,_) -> type_of ~into_block:into_block ~exec_plugin:true gamma f
+    | Call(_) -> type_of ~into_block:into_block ~exec_plugin:true gamma e
     | _ -> raise(Error_of_Inconsistence("ExecPlugin of a non-call value! at: "^(string_of_loc e.loc)))
     )
 
