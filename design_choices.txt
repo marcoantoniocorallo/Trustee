@@ -60,3 +60,6 @@
 - Il codice plugin NON può accedere a variabili esterne.
 
 - I plugin devono essere valutati come funzioni
+
+- I plugin vengono invocati come normali funzioni, preceduti dalla keyword unsafe.
+  Se la keyword non viene utilizzata, il programma viene arrestato quando trova un plugin inatteso.

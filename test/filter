@@ -7,4 +7,4 @@ let trust pwd = {
 } in
 
 let filter = include <filter> in
-filter pwd.checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"]
+unsafe filter pwd.checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"]

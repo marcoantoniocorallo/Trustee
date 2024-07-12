@@ -11,8 +11,10 @@ let rec (<=) (t1 : ttype) (t2 : ttype) : bool = match t1, t2 with
 	| Tlist(None), Tlist(_) -> true
 	| Tlist(Some t1'), Tlist(Some t2') when t1' <= t2' -> true
 	| Ttuple(l1), Ttuple(l2) when List.length l1 = List.length l2 -> List.for_all2 (<=) l1 l2
+  | TuntrustedBlock(t1'), TuntrustedBlock(t2') (* plugin wrap function types *)
+  | TuntrustedBlock(t1'), t2'
+  | t1', TuntrustedBlock(t2') -> t1' <= t2'
   | TtrustedBlock(_), TtrustedBlock(_)  (* block types are not comparable *)
-  | TuntrustedBlock(_), TuntrustedBlock(_) -> false
 	| _ -> false
 
 (** The type environment.  
@@ -46,7 +48,7 @@ let type_env = [
 type block = No | Trusted | Untrusted;;
 
 (** Typing rule in a given type environment gamma *)
-let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : located_exp) : ttype =
+let rec type_of ?(into_block=No) ?(exec_plugin=false) ?(start_env=type_env) (gamma : ttype env) (e : located_exp) : ttype =
   match e.value with
   | Empty -> Tunit
   | CstI(_) -> Tint
@@ -55,7 +57,7 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : 
   | CstC(_) -> Tchar
   | CstS(_) -> Tstring
   | Uop(op, x) -> 
-    ( match op, (type_of ~into_block:into_block gamma x) with
+    ( match op, (type_of~into_block:into_block ~exec_plugin:exec_plugin gamma x) with
     | "!", Tbool -> Tbool
     | "!", _ -> raise (Type_Error ("Not of non-bool type - at Token: "^(string_of_loc (e.loc))))
     | "-", t when t = Tint || t = Tfloat -> t
@@ -70,8 +72,8 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : 
   | Bop(e1, ">", e2)
   | Bop(e1, ">=", e2)
   | Bop(e1, "<>", e2) ->
-    let t1 = type_of ~into_block:into_block gamma e1 in
-    let t2 = type_of ~into_block:into_block gamma e2 in
+    let t1 = type_of~into_block:into_block ~exec_plugin:exec_plugin gamma e1 in
+    let t2 = type_of~into_block:into_block ~exec_plugin:exec_plugin gamma e2 in
     ( match t1, t2 with
     | Ttuple(_), Ttuple(_)
     | Tlist(_), Tlist(_) ->     raise (Type_Error ("Equality of compound values"
@@ -82,8 +84,8 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : 
     | _, _ -> raise (Type_Error ("Error in the arguments of equality"^(string_of_loc (e.loc))))
     )
   | Bop(e1, op, e2) ->
-    let t1 = type_of ~into_block:into_block gamma e1 in
-    let t2 = type_of ~into_block:into_block gamma e2 in
+    let t1 = type_of~into_block:into_block ~exec_plugin:exec_plugin gamma e1 in
+    let t2 = type_of~into_block:into_block ~exec_plugin:exec_plugin gamma e2 in
     let top = lookup gamma op in
     ( match top with
     | Tfun(t1', Tfun(t2', tr')) ->
@@ -93,15 +95,15 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : 
     )
   | Let(x, t, e1, e2) ->
     ( match t with 
-    | Some tt -> let t1 = type_of ~into_block:into_block gamma e1 in 
-      if t1 = tt then type_of ~into_block:into_block ((x,t1)::gamma) e2
+    | Some tt -> let t1 = type_of~into_block:into_block ~exec_plugin:exec_plugin gamma e1 in 
+      if t1 = tt then type_of~into_block:into_block ~exec_plugin:exec_plugin ((x,t1)::gamma) e2
       else raise(Type_Error("Bad type annotation at "^(string_of_loc (e.loc))))
-    | None -> let t1 = type_of ~into_block:into_block gamma e1 in type_of ~into_block:into_block ((x,t1)::gamma) e2
+    | None -> let t1 = type_of~into_block:into_block ~exec_plugin:exec_plugin gamma e1 in type_of~into_block:into_block ~exec_plugin:exec_plugin ((x,t1)::gamma) e2
     )
   | If(e1, e2, e3) ->
-    if (type_of ~into_block:into_block gamma e1) = Tbool then
-      let t2 = type_of ~into_block:into_block gamma e2 in
-      let t3 = type_of ~into_block:into_block gamma e3 in
+    if (type_of~into_block:into_block ~exec_plugin:exec_plugin gamma e1) = Tbool then
+      let t2 = type_of~into_block:into_block ~exec_plugin:exec_plugin gamma e2 in
+      let t3 = type_of~into_block:into_block ~exec_plugin:exec_plugin gamma e3 in
       if t2 <= t3 then t2 
       else raise (Type_Error 
         ("\"If-Rule\": branches have different types: then is "^(string_of_ttype t2)^", else is "^(string_of_ttype t3)
@@ -112,18 +114,21 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : 
     ( match fun_type with 
       (Tfun(t1,t2) as t) ->
         let gamma' = (f, t) :: (x, t1) :: gamma in
-        if (type_of ~into_block:into_block gamma' body) <= t2 then t
+        if (type_of~into_block:into_block ~exec_plugin:exec_plugin gamma' body) <= t2 then t
         else
         raise (Type_Error("Function return type does not match. "
-            ^"Expected "^(string_of_ttype (type_of ~into_block:into_block gamma' body))^" got "
+            ^"Expected "^(string_of_ttype (type_of~into_block:into_block ~exec_plugin:exec_plugin gamma' body))^" got "
             ^(string_of_ttype t2)^" at "^(string_of_loc (e.loc))))
       | _ -> raise (Type_Error("Function type does not match"^(string_of_loc (e.loc))))
     )
   | Call(e1, e2) ->
-    let t1 = type_of ~into_block:into_block gamma e1 in
-    let t2 = type_of ~into_block:into_block gamma e2 in
+    let t1 = type_of~into_block:into_block ~exec_plugin:exec_plugin gamma e1 in
+    let t2 = type_of~into_block:into_block ~exec_plugin:exec_plugin gamma e2 in
     ( match t1 with
-    | TuntrustedBlock(Tfun(tx, tr))
+    | TuntrustedBlock(Tfun(tx, tr) as tfun) when exec_plugin = true ->
+      if t2 <= tx then tr
+      else raise (Type_Error("functional application: argument type mismatch"^(string_of_loc (e2.loc))
+                  ^"function "^(string_of_ttype tfun)^" got "^(string_of_ttype t2)^" instead"))
     | Tfun(tx, tr) as tfun ->
       if t2 <= tx then tr
       else raise (Type_Error("functional application: argument type mismatch"^(string_of_loc (e2.loc))
@@ -135,12 +140,12 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : 
     let type_of_tuple t = 
       let rec f t acc = match t with
         | [] -> Ttuple(List.rev acc)
-        | x::xs -> f xs ((type_of ~into_block:into_block gamma x::acc))
+        | x::xs -> f xs ((type_of~into_block:into_block ~exec_plugin:exec_plugin gamma x::acc))
       in f t []
     in type_of_tuple tuple
   | Proj(tup,i) ->
-    let type_of_tuple = type_of ~into_block:into_block gamma tup in 
-    let type_of_i = type_of ~into_block:into_block gamma i in 
+    let type_of_tuple = type_of~into_block:into_block ~exec_plugin:exec_plugin gamma tup in 
+    let type_of_i = type_of~into_block:into_block ~exec_plugin:exec_plugin gamma i in 
     ( match type_of_tuple, type_of_i with
     | Ttuple(types), Tint -> 
       (match i.value with CstI x -> get types x 
@@ -151,10 +156,10 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : 
   | Lst(list) -> 
     ( match list with 
     | [] -> Tlist None 
-    | x::_ -> Tlist (Some(type_of ~into_block:into_block gamma x)))
+    | x::_ -> Tlist (Some(type_of~into_block:into_block ~exec_plugin:exec_plugin gamma x)))
   | Cons_op(e, l) -> (* 'a -> 'a list -> 'a list *)
-    let type_of_l = type_of ~into_block:into_block gamma l in 
-    let type_of_e = type_of ~into_block:into_block gamma e in 
+    let type_of_l = type_of~into_block:into_block ~exec_plugin:exec_plugin gamma l in 
+    let type_of_e = type_of~into_block:into_block ~exec_plugin:exec_plugin gamma e in 
     ( match type_of_e, type_of_l with
     | t1, Tlist(Some t2) when t1 <= t2 -> type_of_l 
     | t1, Tlist(Some _) ->  raise(Type_Error("Type error: Cons between "
@@ -166,7 +171,7 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : 
               ^" at: "^(string_of_loc (e.loc))))
     )
   | Head(l) -> (* 'a list -> 'a *)
-    let type_of_l = type_of ~into_block:into_block gamma l in 
+    let type_of_l = type_of~into_block:into_block ~exec_plugin:exec_plugin gamma l in 
     ( match type_of_l with
     | Tlist(Some t) -> t
     | Tlist(None) -> raise(Type_Error("Type error: attempting to pop an element from an empty list!"
@@ -174,7 +179,7 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : 
     | _ -> raise(Type_Error("Head of a non-list value!"^(string_of_loc (l.loc))))
     )
   | Tail(l) -> (* 'a list -> 'a *)
-    let type_of_l = type_of ~into_block:into_block gamma l in 
+    let type_of_l = type_of~into_block:into_block ~exec_plugin:exec_plugin gamma l in 
     ( match type_of_l with
     | Tlist(Some t) -> Tlist(Some t)
     | Tlist(None) -> raise(Type_Error("Type error: attempting to tail an empty list!"
@@ -182,7 +187,7 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : 
     | _ -> raise(Type_Error("Tail of a non-list value!"^(string_of_loc (l.loc))))
     )
   | IsEmpty(l) -> (* 'a list -> bool *)
-    ( match type_of ~into_block:into_block gamma l with
+    ( match type_of~into_block:into_block ~exec_plugin:exec_plugin gamma l with
     | Tlist(_) -> Tbool
     | _ -> raise(Type_Error("Check emptiness of a non-list value!"^(string_of_loc (l.loc))))
     )
@@ -192,7 +197,7 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : 
     if into_block = No then TtrustedBlock(type_of_trusted b gamma [])
     else raise (Type_Error("Cannot have nested blocks."))
   | Access(tb, field) -> 
-    ( match type_of ~into_block:into_block gamma tb, field.value with
+    ( match type_of~into_block:into_block ~exec_plugin:exec_plugin gamma tb, field.value with
     | TtrustedBlock(env), Var(id) -> (* Only public functions can be accessed in trusted blocks *)
       ( match List.assoc_opt id env with
       | Some (Tfun(_) as t ,Public) -> t
@@ -210,12 +215,17 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : 
     ^(string_of_loc e.loc) ))
   | Plugin(e) -> (* eval in an empty env *)
     if into_block = No then 
-      let v = type_of ~into_block:Untrusted start_env e in
+      let v = type_of ~into_block:Untrusted ~exec_plugin:exec_plugin start_env e in
       (match v with
       | Tfun(_) -> TuntrustedBlock(v)
       | _ -> raise(Type_Error("A plugin must implement a function. At: "^(string_of_loc e.loc)))
       )
     else raise (Type_Error("Cannot have nested blocks."))
+  | ExecPlugin(e) -> 
+    (match e.value with
+    | Call(f,_) -> type_of ~into_block:into_block ~exec_plugin:true gamma f
+    | _ -> raise(Error_of_Inconsistence("ExecPlugin of a non-call value! at: "^(string_of_loc e.loc)))
+    )
 
 
 (* Evaluates a trusted block of expression to an <ide -> ttype * confidentiality> environment 

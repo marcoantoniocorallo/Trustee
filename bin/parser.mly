@@ -53,7 +53,7 @@
 %token PROJ
 %token CONS_OP "::" HEAD "hd" TAIL "tl" IS_EMPTY
 %token COMMA "," COLON ":" SEMICOLON ";" ARROW "->" DOT "."
-%token TRUST  SECRET  HANDLE  PLUGIN INCLUDE
+%token TRUST  SECRET  HANDLE  PLUGIN INCLUDE  UNSAFE
 %token <Syntax.located_exp>PARSED
 %token EOF
 
@@ -139,6 +139,9 @@ expr:
       | Let(_,_, { loc = _; value = Plugin(_)},_) -> e
       | _ -> raise(Exceptions.Type_Error("A plugin was expected in include statement at: "^(Utils.string_of_loc e.loc)))
     }
+
+| UNSAFE f = func
+    { ExecPlugin(f) |@| $loc }
 
 let_expr:
 | id = ID t = option(preceded(":", ptype)) "=" e1 = expr

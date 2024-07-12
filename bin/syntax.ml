@@ -50,6 +50,7 @@ type exp =
 	| Handle of located_exp list											(* Interface fn between trusted and untrusted code *)
 	| Access of located_exp * located_exp							(* Access to trusted block name *)
 	| Plugin of located_exp														(* Untrusted block of code and data *)
+	| ExecPlugin of located_exp
 	[@@deriving show]
 
 and located_exp = exp located                 			(* ( exp * location ) *)

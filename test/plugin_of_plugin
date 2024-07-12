@@ -1,0 +1,10 @@
+let plugin pwd = {
+  let pass = "abcd" in 
+
+  let fun checkpwd (guess : string) : bool = 
+    pass = guess in
+  checkpwd
+} in
+
+let filter = include <filter> in
+unsafe filter pwd ["pippo", "abc", "abcd", "pluto", "paperino"]

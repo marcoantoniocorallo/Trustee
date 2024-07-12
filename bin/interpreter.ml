@@ -41,25 +41,17 @@ let rec eval ?(into_block=false) ?(exec_plugin=false) ?(start_env=(Native_functi
 		| _ ->  raise (Type_system_Failed("eval:If non-bool guard - "
             ^(string_of_value v1)^" at Token: "^(string_of_loc (e.loc) ) ) ) )
 	| Fun(f, x, _, fBody) -> Closure(f, x, fBody, env), t
-	| Call(eFun, eArg) -> (* IDEA: UNSAFE( f = func) -> ExecPlugin(f) -> ExecPlugin(Call(...)) -> Call ~exec_plugin=true *)
-		let fClosure, f_t = eval ~into_block:into_block ~exec_plugin:exec_plugin eFun env t in
-		(match fClosure with
-		| Closure (f, x, fBody, fDeclEnv) ->
-			print_endline (f^" primo bolcco");
+	| Call(eFun, eArg) ->
+		(match eval ~into_block:into_block ~exec_plugin:exec_plugin eFun env t with
+		| Closure (f, x, fBody, fDeclEnv) as fClosure, f_t
+		| UntrustedBlock((Closure (f, x, fBody, fDeclEnv)) as fClosure, f_t), _ ->
 			if f_t = Taint && exec_plugin = false 
 				then raise(Security_Error("(Possible) malicious execution. Abort."));
 			let xVal, xTaint = eval ~into_block:into_block ~exec_plugin:exec_plugin eArg env t in
 			let fBodyEnv = (x, (xVal, xTaint)) :: (f, (fClosure, f_t)) :: fDeclEnv in 
 			let f_res, t_res = eval ~into_block:into_block ~exec_plugin:exec_plugin fBody fBodyEnv t in 
 			f_res, t_res ++ f_t ++ xTaint
-		| UntrustedBlock((Closure (f, x, fBody, fDeclEnv)) as fClosure, f_t) -> 
-			print_endline (f^" secondo blocco"); 
-			let xVal, xTaint = eval ~into_block:into_block ~exec_plugin:true eArg env t in
-			let fBodyEnv = (x, (xVal, xTaint)) :: (f, (fClosure, f_t)) :: fDeclEnv in 
-			let f_res, _ = eval ~into_block:into_block ~exec_plugin:true fBody fBodyEnv t in 
-			f_res, Taint
-		| _ ->  raise (Type_system_Failed("eval:Call: a function was expected! "
-						^(string_of_value fClosure)^" at Token: "^(string_of_loc (e.loc) ) ) ) )
+		| _ ->  raise (Type_system_Failed("eval:Call: a function was expected! at Token: "^(string_of_loc (e.loc) ) ) ) )
 	| Tup(tuple) ->
 		let evaluateTuple tup = 
 			let rec f tup acc taint = match tup with
@@ -143,6 +135,8 @@ let rec eval ?(into_block=false) ?(exec_plugin=false) ?(start_env=(Native_functi
 		else
 			let v' = eval ~into_block:true ~exec_plugin:exec_plugin e start_env Taint in 
 			UntrustedBlock(v'), t
+	| ExecPlugin(c) -> 
+		eval ~into_block:true ~exec_plugin:true c env t
 
 (* Evaluates a trusted block of expression to an <ide -> value * confidentiality> environment 
  * note: the only constructs possible in a trusted block are (also secret) declaration and handle
