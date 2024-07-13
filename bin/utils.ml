@@ -75,3 +75,7 @@ let string_of_loc (startp, endp) =
 let get_value (vt : (value * integrity)) = fst vt;;
 
 let get_taint (vt : (value * integrity)) = snd vt;;
+
+let get_ttype (tc : (ttype * confidentiality)) = fst tc;;
+
+let get_confidentiality (tc : (ttype * confidentiality)) = snd tc;;

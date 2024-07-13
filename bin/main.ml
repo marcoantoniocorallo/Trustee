@@ -3,7 +3,8 @@ open Utils;;
 open Type_system;;
 
 let eval code = 
-  let _ = type_check code in 
+  let _, conf = type_check code in 
+  if conf = Private then raise(Security_Error("Possible Data leakage. Abort."));
   print_endline (string_of_value (Interpreter.eval code)) 
 
 let print_usage () = 

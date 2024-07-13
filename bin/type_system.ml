@@ -45,29 +45,33 @@ let type_env = [
   "print_string", Tfun(Tstring, Tunit);
 ];;
 
+let type_env = List.map (fun (i,t) -> (i, (t, Public))) type_env;;
+
 (** Typing rule in a given type environment gamma *)
-let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : located_exp) : ttype =
+let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confidentiality) env)
+                 (cxt : confidentiality) (e : located_exp) : (ttype * confidentiality) =
   match e.value with
-  | Empty -> Tunit
-  | CstI(_) -> Tint
-  | CstB(_) -> Tbool
-  | CstF(_) -> Tfloat
-  | CstC(_) -> Tchar
-  | CstS(_) -> Tstring
+  | Empty -> Tunit, cxt
+  | CstI(_) -> Tint, cxt
+  | CstB(_) -> Tbool, cxt
+  | CstF(_) -> Tfloat, cxt
+  | CstC(_) -> Tchar, cxt
+  | CstS(_) -> Tstring, cxt
   | Uop(op, x) -> 
-    ( match op, (type_of~into_block:into_block gamma x) with
-    | "!", Tbool -> Tbool
+    let ty, c = type_of ~into_block:into_block gamma cxt x in 
+    ( match op, ty with
+    | "!", Tbool -> Tbool, c
+    | "-", t when t = Tint || t = Tfloat -> t, c
     | "!", _ -> raise (Type_Error ("Not of non-bool type - at Token: "^(string_of_loc (e.loc))))
-    | "-", t when t = Tint || t = Tfloat -> t
     | "-", _ -> raise (Type_Error ("Not of non-number type - at Token: "^(string_of_loc (e.loc))))  
     | _, _ -> raise (Unsupported_Primitive(op))
     )
   | Var(x)  -> 
-    let tx = lookup gamma x in 
+    let tx, c = lookup gamma x in 
     (match tx with 
     | TuntrustedBlock(_) when into_block = Trusted ->
       raise(Security_Error("Type: Cannot access to plugin from inside trusted blocks."))
-    | _ -> tx
+    | _ -> tx, c
     )
   (* Define equality and comparison for each simple type *)
   | Bop(e1, "=", e2)
@@ -76,65 +80,70 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : 
   | Bop(e1, ">", e2)
   | Bop(e1, ">=", e2)
   | Bop(e1, "<>", e2) ->
-    let t1 = type_of~into_block:into_block gamma e1 in
-    let t2 = type_of~into_block:into_block gamma e2 in
+    let t1, c1 = type_of ~into_block:into_block gamma cxt e1 in
+    let t2, c2 = type_of ~into_block:into_block gamma cxt e2 in
     ( match t1, t2 with
     | Ttuple(_), Ttuple(_)
     | Tlist(_), Tlist(_) ->     raise (Type_Error ("Equality of compound values"
                                 ^(string_of_loc (e.loc))))
     | Tfun(_,_), Tfun(_,_) ->   raise (Type_Error ("Equality of functional values"
                                 ^(string_of_loc (e.loc))))
-    | t1', t2' when t1' = t2' -> Tbool
+    | t1', t2' when t1' = t2' -> Tbool, (join c1 c2)
     | _, _ -> raise (Type_Error ("Error in the arguments of equality"^(string_of_loc (e.loc))))
     )
   | Bop(e1, op, e2) ->
-    let t1 = type_of~into_block:into_block gamma e1 in
-    let t2 = type_of~into_block:into_block gamma e2 in
-    let top = lookup gamma op in
+    let t1, c1 = type_of ~into_block:into_block gamma cxt e1 in
+    let t2, c2 = type_of ~into_block:into_block gamma cxt e2 in
+    let top, _ = lookup gamma op in
     ( match top with
     | Tfun(t1', Tfun(t2', tr')) ->
-      if (t1' = t1 && t2' = t2) then tr'
+      if (t1' = t1 && t2' = t2) then tr', (join c1 c2)
       else raise (Type_Error ("Error in the arguments of "^op^": "^(string_of_loc (e.loc))))
     | _ ->  raise(Error_of_Inconsistence("Inconsistence in Bop "^op^(string_of_loc (e.loc))))
     )
   | Let(x, t, e1, e2) ->
+    let t1, c1 = type_of ~into_block:into_block gamma cxt e1 in 
+    let t2, c2 = type_of ~into_block:into_block ((x,(t1,c1))::gamma) cxt e2 in 
     ( match t with 
-    | Some tt -> let t1 = type_of~into_block:into_block gamma e1 in 
-      if t1 = tt then type_of~into_block:into_block ((x,t1)::gamma) e2
+    | Some tt -> 
+      if t1 = tt then t2, join c2 cxt
       else raise(Type_Error("Bad type annotation at "^(string_of_loc (e.loc))))
-    | None -> let t1 = type_of~into_block:into_block gamma e1 in type_of~into_block:into_block ((x,t1)::gamma) e2
+    | None -> t2, join c2 cxt
     )
   | If(e1, e2, e3) ->
-    if (type_of~into_block:into_block gamma e1) = Tbool then
-      let t2 = type_of~into_block:into_block gamma e2 in
-      let t3 = type_of~into_block:into_block gamma e3 in
-      if t2 <= t3 then t2 
+    let t1, c1 = type_of ~into_block:into_block gamma cxt e1 in 
+    if t1 = Tbool then
+      let cxt' = join cxt c1 in 
+      let t2, c2 = type_of ~into_block:into_block gamma cxt' e2 in
+      let t3, c3 = type_of ~into_block:into_block gamma cxt' e3 in
+      if t2 <= t3 then t2, join (join c1 cxt) (join c2 c3)
+      (* Conservative! I also should constraint branches to the same confidentiality level *)
       else raise (Type_Error 
         ("\"If-Rule\": branches have different types: then is "^(string_of_ttype t2)^", else is "^(string_of_ttype t3)
         ^" - at Token: "^(string_of_loc (e.loc))))
-    else
-      raise (Type_Error ("\"If-Rule\": if with no a boolean guard"^(string_of_loc (e.loc))))
+    else raise (Type_Error ("\"If-Rule\": if with no a boolean guard"^(string_of_loc (e.loc))))
   | Fun(f, x, fun_type, body) ->
     ( match fun_type with 
       (Tfun(t1,t2) as t) ->
-        let gamma' = (f, t) :: (x, t1) :: gamma in
-        if (type_of~into_block:into_block gamma' body) <= t2 then t
+        let gamma' = (f, (t, Public)) :: (x, (t1, Public)) :: gamma in
+        let t_res, _ = type_of ~into_block:into_block gamma' cxt body in 
+        if (t_res) <= t2 then t, cxt
         else
         raise (Type_Error("Function return type does not match. "
-            ^"Expected "^(string_of_ttype (type_of~into_block:into_block gamma' body))^" got "
+            ^"Expected "^(string_of_ttype (t_res))^" got "
             ^(string_of_ttype t2)^" at "^(string_of_loc (e.loc))))
       | _ -> raise (Type_Error("Function type does not match"^(string_of_loc (e.loc))))
     )
   | Call(e1, e2) ->
-    let t1 = type_of~into_block:into_block gamma e1 in
-    let t2 = type_of~into_block:into_block gamma e2 in
+    let t1, c1 = type_of ~into_block:into_block gamma cxt e1 in
+    let t2, c2 = type_of ~into_block:into_block gamma cxt e2 in
     ( match t1 with
     | Tfun(tx, tr) as tfun 
     | TuntrustedBlock(Tfun(tx, tr) as tfun) ->
       if t2 <= tx then 
         ( match tr with
-        | TuntrustedBlock(tf) -> tf
-        | _ -> tr
+        | TuntrustedBlock(tf) -> tf, join c1 c2
+        | _ -> tr, join c1 c2
         )
       else raise (Type_Error("functional application: argument type mismatch"^(string_of_loc (e2.loc))
                   ^"function "^(string_of_ttype tfun)^" got "^(string_of_ttype t2)^" instead"))
@@ -143,69 +152,82 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : 
     )
   | Tup(tuple) ->
     let type_of_tuple t = 
-      let rec f t acc = match t with
-        | [] -> Ttuple(List.rev acc)
-        | x::xs -> f xs ((type_of~into_block:into_block gamma x::acc))
-      in f t []
+      let rec f t acc sec = match t with
+      | [] -> Ttuple(List.rev acc), sec
+      | x::xs -> 
+        let xt, xc = type_of ~into_block:into_block gamma cxt x in 
+        f xs (xt::acc) (join xc sec)
+      in f t [] cxt
     in type_of_tuple tuple
   | Proj(tup,i) ->
-    let type_of_tuple = type_of~into_block:into_block gamma tup in 
-    let type_of_i = type_of~into_block:into_block gamma i in 
+    let type_of_tuple, conft = type_of ~into_block:into_block gamma cxt tup in 
+    let type_of_i, confi = type_of ~into_block:into_block gamma cxt i in 
     ( match type_of_tuple, type_of_i with
     | Ttuple(types), Tint -> 
-      (match i.value with CstI x -> get types x 
+      (match i.value with CstI x -> get types x, join confi conft
       |_ -> raise(Type_Error("An int literal was expected in projection of tuple! "^" at Token: "^(string_of_loc (e.loc) ))) )
     | Ttuple(_), _ -> raise(Type_Error("An integer was expected in projection of tuple! "^" at Token: "^(string_of_loc (e.loc) )))
     | _, _ -> raise(Type_Error("A tuple was expected in projection of tuple! "^" at Token: "^(string_of_loc (e.loc) )))
     )
   | Lst(list) -> 
     ( match list with 
-    | [] -> Tlist None 
-    | x::_ -> Tlist (Some(type_of~into_block:into_block gamma x)))
+    | [] -> Tlist None, cxt
+    | x::_ as ls -> 
+      let rec f t acc sec = match t with
+      | [] -> Tlist(Some acc), sec
+      | x::xs -> 
+        let xt, xc = type_of ~into_block:into_block gamma cxt x in 
+        if xt = acc then f xs acc (join xc sec)
+        else raise(Type_Error("Lists must contain homogeneous-type items. At: "^(string_of_loc e.loc)))
+      in 
+      let type_of_x, _  = type_of ~into_block:into_block gamma cxt x in 
+      f ls type_of_x cxt
+    )
   | Cons_op(e, l) -> (* 'a -> 'a list -> 'a list *)
-    let type_of_l = type_of~into_block:into_block gamma l in 
-    let type_of_e = type_of~into_block:into_block gamma e in 
+    let type_of_l, c1 = type_of ~into_block:into_block gamma cxt l in 
+    let type_of_e, c2 = type_of ~into_block:into_block gamma cxt e in 
     ( match type_of_e, type_of_l with
-    | t1, Tlist(Some t2) when t1 <= t2 -> type_of_l 
+    | t1, Tlist(Some t2) when t1 <= t2 -> type_of_l, join c1 c2
     | t1, Tlist(Some _) ->  raise(Type_Error("Type error: Cons between "
                             ^(string_of_ttype t1)^" and a "^(string_of_ttype type_of_l)
                             ^" at: "^(string_of_loc (e.loc))))
-    | _, Tlist(None) -> Tlist(Some type_of_e)
+    | _, Tlist(None) -> Tlist(Some type_of_e), join c1 c2
     | _,_ ->  raise(Type_Error("Type error: Cons between "
               ^(string_of_ttype type_of_e)^" and a "^(string_of_ttype type_of_l)
               ^" at: "^(string_of_loc (e.loc))))
     )
   | Head(l) -> (* 'a list -> 'a *)
-    let type_of_l = type_of~into_block:into_block gamma l in 
+    let type_of_l, cl = type_of ~into_block:into_block gamma cxt l in 
     ( match type_of_l with
-    | Tlist(Some t) -> t
+    | Tlist(Some t) -> t, join cxt cl
     | Tlist(None) -> raise(Type_Error("Type error: attempting to pop an element from an empty list!"
                     ^(string_of_loc (l.loc))))
     | _ -> raise(Type_Error("Head of a non-list value!"^(string_of_loc (l.loc))))
     )
   | Tail(l) -> (* 'a list -> 'a *)
-    let type_of_l = type_of~into_block:into_block gamma l in 
+    let type_of_l, c = type_of ~into_block:into_block gamma cxt l in 
     ( match type_of_l with
-    | Tlist(Some t) -> Tlist(Some t)
+    | Tlist(Some t) -> Tlist(Some t), join cxt c
     | Tlist(None) -> raise(Type_Error("Type error: attempting to tail an empty list!"
                                     ^(string_of_loc (e.loc))))
     | _ -> raise(Type_Error("Tail of a non-list value!"^(string_of_loc (l.loc))))
     )
   | IsEmpty(l) -> (* 'a list -> bool *)
-    ( match type_of~into_block:into_block gamma l with
-    | Tlist(_) -> Tbool
+    ( match type_of ~into_block:into_block gamma cxt l with
+    | Tlist(_), c -> Tbool, join cxt c
     | _ -> raise(Type_Error("Check emptiness of a non-list value!"^(string_of_loc (l.loc))))
     )
-  | NativeFunction(_) ->
+  | NativeFunction(_) -> (* Need to handle print confidentiality check !!! *)
     raise ( Error_of_Inconsistence("type system: !!! Prohibit use of Native Functions !!! at: "^(string_of_loc e.loc)))
   | Trust(b) -> 
-    if into_block = No then TtrustedBlock(type_of_trusted b gamma [])
+    if into_block = No then TtrustedBlock(type_of_trusted b gamma []), cxt
     else raise (Type_Error("Cannot have nested blocks."))
   | Access(tb, field) -> 
-    ( match type_of~into_block:into_block gamma tb, field.value with
+    let tbtype, tbconf =  type_of ~into_block:into_block gamma cxt tb in 
+    ( match tbtype, field.value with
     | TtrustedBlock(env), Var(id) -> (* Only public functions can be accessed in trusted blocks *)
       ( match List.assoc_opt id env with
-      | Some (Tfun(_) as t ,Public) -> t
+      | Some (Tfun(_) as t ,Public) -> t, join cxt tbconf
       | Some (_, Private) -> raise (Type_Error("Secret field cannot be accessed. Error at: "^(string_of_loc e.loc)))
       | Some (_, Public) -> raise(Type_system_Failed("type_of:access: found public non-function object; at "^(string_of_loc e.loc)))
       | None -> raise (Type_Error("Field "^id^" not found in block at: "^(string_of_loc tb.loc)))
@@ -220,9 +242,9 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : 
     ^(string_of_loc e.loc) ))
   | Plugin(e) -> (* eval in an empty env *)
     if into_block = No then 
-      let v = type_of ~into_block:Untrusted start_env e in
+      let v, c = type_of ~into_block:Untrusted start_env cxt e in
       (match v with
-      | Tfun(_) -> TuntrustedBlock(v)
+      | Tfun(_) -> TuntrustedBlock(v), join cxt c
       | _ -> raise(Type_Error("A plugin must implement a function. At: "^(string_of_loc e.loc)))
       )
     else raise (Type_Error("Cannot have nested blocks."))
@@ -231,13 +253,13 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : ttype env) (e : 
 (* Evaluates a trusted block of expression to an <ide -> ttype * confidentiality> environment 
  * note: the only constructs possible in a trusted block are (also secret) declaration and handle
  *)
-and type_of_trusted (e : located_exp) (env : ttype env) (tb : (ttype * confidentiality) env) : (ttype * confidentiality) env = 
+and type_of_trusted (e : located_exp) (env : (ttype * confidentiality) env) (tb : (ttype * confidentiality) env) : (ttype * confidentiality) env = 
   match e.value with
   | Let(x, t, e1, e2) -> (* checks rhs type, adds to env and tb and checks the body type *)
-    let t' = 
+    let t', c' = 
       ( match e1.value with
-      | Secret(s) -> 
-        let ts = type_of ~into_block:Trusted env s in
+      | Secret(s) -> (* secret data are followed into information flow analysis *)
+        let ts, cs = type_of ~into_block:Trusted env Private s in
         (match ts with  (* Only data can be secret *)
         | Tint
         | Tbool
@@ -245,16 +267,17 @@ and type_of_trusted (e : located_exp) (env : ttype env) (tb : (ttype * confident
         | Tchar
         | Tstring
         | Ttuple(_)
-        | Tlist(_) -> ts
+        | Tlist(_) -> ts, cs
         | _ -> raise (Type_Error("Only data can be secret. At: "^(string_of_loc s.loc)))
         )
       | Trust(_) -> raise (Type_Error("Cannot have nested blocks. At: "^(string_of_loc e.loc)))
-      | _ -> type_of ~into_block:Trusted env e1
+      (* non-secret data are still private, but they are not followed in information flow analysis *)
+      | _ -> type_of ~into_block:Trusted env Public e1 
       ) in 
     (match t with 
-    | Some tt -> if t' = tt then type_of_trusted e2 ((x,t')::env) ((x, (t',Private))::tb)
+    | Some tt -> if t' = tt then type_of_trusted e2 ((x,(t',c'))::env) ((x, (t',Private))::tb)
       else raise(Type_Error("Bad type annotation at "^(string_of_loc (e.loc))))
-    | None -> type_of_trusted e2 ((x,t')::env) ((x, (t',Private))::tb)
+    | None -> type_of_trusted e2 ((x,(t',c'))::env) ((x, (t',Private))::tb)
     )
   | Handle(l) -> (* for each item i, adds (i, (type_of i, Public)) to tb -> shadowing *)
     let add_f (f : located_exp) = 
@@ -272,4 +295,4 @@ and type_of_trusted (e : located_exp) (env : ttype env) (tb : (ttype * confident
               ^(Syntax.show_exp other)^" at: "^(string_of_loc e.loc) ))
 ;;
 
-let type_check e = type_of type_env e
+let type_check e = type_of type_env Public e

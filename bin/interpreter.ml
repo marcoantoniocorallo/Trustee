@@ -31,9 +31,10 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
                 ^" at Token: "^(string_of_loc (e.loc) ) ) ) )
 	| Var x  -> lookup env x 
 	| Let(x, _, eRhs, letBody) ->
-		let xVal = eval ~into_block:into_block eRhs env t in
-		let letEnv = (x, xVal) :: env in
-		eval ~into_block:into_block letBody letEnv t
+		let xVal, t' = eval ~into_block:into_block eRhs env t in
+		let letEnv = (x, (xVal, t')) :: env in
+		let v, t'' = eval ~into_block:into_block letBody letEnv t in 
+		v, (t ++ t'')
 	| If(e1, e2, e3) ->
 		let v1, t1 = eval ~into_block:into_block e1 env t in 
 		(match v1 with
@@ -50,7 +51,6 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 		(match eval ~into_block:into_block eFun env t with
 		| Closure (f, x, fBody, fDeclEnv) as fClosure, f_t 
 		| UntrustedBlock((Closure (f, x, fBody, fDeclEnv)) as fClosure, f_t), _ ->
-			if f_t = Taint then failwith"";
 			let xVal, xTaint = eval ~into_block:into_block eArg env t in
 			let fBodyEnv = (x, (xVal, xTaint)) :: (f, (fClosure, f_t)) :: fDeclEnv in 
 			let f_res, t_res = eval ~into_block:into_block fBody fBodyEnv t in 
@@ -63,7 +63,7 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 				| x::xs -> 
 					let xv, xt = eval ~into_block:into_block x env t in 
 					f xs (xv::acc) (taint ++ xt)
-			in f tup [] Untaint
+			in f tup [] t
 		in evaluateTuple tuple
   | Proj(tup,i) -> 
     let tuple, tt = eval ~into_block:into_block tup env t in 
@@ -79,7 +79,7 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 				| x::xs -> 
 					let xv, xt = eval ~into_block:into_block x env t in 
 					f xs (xv::acc) (taint ++ xt)
-			in f l [] Untaint
+			in f l [] t
 		in evaluateList list
 	| Cons_op(e, l) ->
 		let v1, t1 = eval ~into_block:into_block e env t in 

@@ -69,3 +69,15 @@
 
 - Se dovesse chiederlo: quando una funzione taint viene invocata il programma non abortisce.
   Infatti, non potendo modificare la memoria, l'unico tipo di funzione taint sono i plugin
+
+- Dato un blocco trusted, solo le funzioni in handle sono public;
+  variabili secret e variabili/funzioni normali sono entrambe private.
+  La differenza tra secret e normali è data dal fatto che le variabili secret vengono "seguite"
+  durante l'analisi di information flow
+
+- Information flow: 
+  - Assegnamento: propago senza sollevare eccezione. 
+    L'eccezione viene sollevata solo per stampa di valori
+
+  - IF: approccio conservativo, valuto la join tra la confidenzialità dei due branch,
+    messi a loro volta in join con il contesto e la guardia
