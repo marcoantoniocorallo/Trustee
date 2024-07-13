@@ -95,11 +95,25 @@ and confidentiality =
 and integrity = 
 	| Taint
 	| Untaint
+	[@@deriving show]
 
 and vt = (value * integrity)
+[@@deriving show]
 ;;
 
-type block = No | Trusted | Untrusted;;
+type block = No | Trusted | Untrusted
+[@@deriving show]
+;;
 
 let (++) (t1 : integrity) (t2 : integrity) : integrity = 
 	if t1 = t2 then t1 else Taint;;
+
+let (<<) (c1 : confidentiality) (c2 : confidentiality) : bool = 
+	match c1, c2 with
+	| Public, _ 
+	| _, Private -> true
+	| _, _ -> false;;
+
+let join e e' = if e = Public then e' else Private ;;
+
+let meet e e' = if e = Public then Public else e';;
