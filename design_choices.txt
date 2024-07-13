@@ -22,11 +22,14 @@
 
 - Trusted Block value non-printable (opaque)
 
-- Trusted blocks e plugin NON sono cittadini di prima classe! 
+- Trusted blocks NON sono cittadini di prima classe! 
   i.e. Non possono essere usati come argomenti di funzioni o restituiti
   Non sarebbe complicato estendere il linguaggio per trattare come first-class citizen i blocchi,
   basterebbe equipaggiarlo di type annotations, definire la relazione di ordinamento tra tipi <=
   in modo pointwise (field-per-field)
+
+- I plugin possono invece essere passati come funzioni o come valori di ritorno, essendo funzioni
+  La relazione di ordinamento tra plugin segue quella delle funzioni che wrappano infatti
 
 - mostrare la grammatica del linguaggio e dei blocchi
 
