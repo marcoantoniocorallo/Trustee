@@ -36,7 +36,6 @@
       ("handle",  HANDLE);
       ("plugin", PLUGIN);
       ("include", INCLUDE);
-      ("unsafe", UNSAFE);
 		]
 
 }

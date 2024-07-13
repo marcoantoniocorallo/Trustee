@@ -12,7 +12,7 @@ let trust pwd = {
 let p = include <p> in 
 let trust pwd = {
   let pass = "abcd" in
-  let _ = unsafe p 5 in // cannot access to plugin from inside trusted blocks
+  let _ = (lambda : (int -> int) -> p) () in // cannot access to plugin from inside trusted blocks
   let fun checkpwd (guess : string) : bool = guess = pass in
   handle: {checkpwd}
 } in pwd

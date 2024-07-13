@@ -50,7 +50,6 @@ type exp =
 	| Handle of located_exp list											(* Interface fn between trusted and untrusted code *)
 	| Access of located_exp * located_exp							(* Access to trusted block name *)
 	| Plugin of located_exp														(* Untrusted block of code and data *)
-	| ExecPlugin of located_exp
 	[@@deriving show]
 
 and located_exp = exp located                 			(* ( exp * location ) *)
@@ -99,6 +98,8 @@ and taintness =
 
 and vt = (value * taintness)
 ;;
+
+type block = No | Trusted | Untrusted;;
 
 let (++) (t1 : taintness) (t2 : taintness) : taintness = 
 	if t1 = t2 then t1 else Taint;;
