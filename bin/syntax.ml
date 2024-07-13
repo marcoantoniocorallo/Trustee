@@ -79,12 +79,13 @@ and value =
 	| Float of float
 	| Char of char
 	| String of string
-	| Closure of string * string * located_exp * vt env			(*	(f, x, fBody, fDeclEnv) *)
+	| Closure of string * string * located_exp * (value * integrity) env			
+																													(*	(f, x, fBody, fDeclEnv) *)
 	| Tuple of value list   																(*	Heterogeneous fixed-length tuple of values*)
 	| ListV of value list   																(*	Homogeneous list of values *)
 	(* Block of data and code are associated to value environments *)
-	| TrustedBlock of ((vt * confidentiality) env	[@opaque])
-	| UntrustedBlock of vt
+	| TrustedBlock of (((value * integrity) * confidentiality) env	[@opaque])
+	| UntrustedBlock of (value * integrity)
 	[@@deriving show]
 
 and confidentiality = 
@@ -97,12 +98,8 @@ and integrity =
 	| Untaint
 	[@@deriving show]
 
-and vt = (value * integrity)
-[@@deriving show]
-;;
-
-type block = No | Trusted | Untrusted
-[@@deriving show]
+and block = No | Trusted | Untrusted
+	[@@deriving show]
 ;;
 
 let (++) (t1 : integrity) (t2 : integrity) : integrity = 
