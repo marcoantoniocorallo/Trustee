@@ -9,7 +9,7 @@ open Exceptions;;
 	Interpreter that implements dynamic taint analysis.
   Note: type annotations are here ignored: they are already checked by the type checker.
  *)
-let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_exp) (env : vt env) (t : taintness) : vt = 
+let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_exp) (env : vt env) (t : integrity) : vt = 
 	match e.value with
 	| Empty -> Unit, t
 	| CstI i -> Int i, t
@@ -49,6 +49,7 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 		(match eval ~into_block:into_block eFun env t with
 		| Closure (f, x, fBody, fDeclEnv) as fClosure, f_t 
 		| UntrustedBlock((Closure (f, x, fBody, fDeclEnv)) as fClosure, f_t), _ ->
+			if f_t = Taint then failwith"";
 			let xVal, xTaint = eval ~into_block:into_block eArg env t in
 			let fBodyEnv = (x, (xVal, xTaint)) :: (f, (fClosure, f_t)) :: fDeclEnv in 
 			let f_res, t_res = eval ~into_block:into_block fBody fBodyEnv t in 
@@ -141,7 +142,7 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 (* Evaluates a trusted block of expression to an <ide -> value * confidentiality> environment 
  * note: the only constructs possible in a trusted block are (also secret) declaration and handle
  *)
-and eval_trusted (e : located_exp) (env : vt env) (tb : (vt * confidentiality) env) (t : taintness) : (vt * confidentiality) env = 
+and eval_trusted (e : located_exp) (env : vt env) (tb : (vt * confidentiality) env) (t : integrity) : (vt * confidentiality) env = 
 	if t = Taint then raise(Security_Error("Trusted block in taint status. Abort."));
 	match e.value with
 	| Let(x, _, eRhs, letBody) -> (* evaluates rhs, adds to env and tb and eval(_trusted) the body *)

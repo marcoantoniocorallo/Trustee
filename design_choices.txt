@@ -66,3 +66,6 @@
 
 - I plugin vengono invocati come normali funzioni, preceduti dalla keyword unsafe.
   Se la keyword non viene utilizzata, il type checker fallisce perchè trova un plugin inatteso.
+
+- Se dovesse chiederlo: quando una funzione taint viene invocata il programma non abortisce.
+  Infatti, non potendo modificare la memoria, l'unico tipo di funzione taint sono i plugin

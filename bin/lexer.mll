@@ -31,6 +31,7 @@
       ("bool", TBOOL);
       ("string", TSTRING);
       ("list", TLIST);
+      ("unit", TUNIT);
       ("trust", TRUST);
       ("secret",  SECRET);
       ("handle",  HANDLE);

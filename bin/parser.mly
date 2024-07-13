@@ -40,7 +40,7 @@
 %token <string> STRING
 %token <string> ID
 %token IF THEN ELSE
-%token TINT TBOOL TFLOAT TCHAR TSTRING TLIST
+%token TINT TBOOL TFLOAT TCHAR TSTRING TLIST TUNIT
 %token LET IN 
 %token FUN LAMBDA PIPE "|>"
 %token LPAREN "(" RPAREN ")"
@@ -280,6 +280,9 @@ simple_ptype:
 
   | TSTRING
     { Tstring }
+
+  | TUNIT 
+    { Tunit }
 
   | t=option(simple_ptype) TLIST
     { Tlist(t) }

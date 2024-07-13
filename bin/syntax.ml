@@ -92,14 +92,14 @@ and confidentiality =
 	| Public
 	[@@ deriving show]
 
-and taintness = 
+and integrity = 
 	| Taint
 	| Untaint
 
-and vt = (value * taintness)
+and vt = (value * integrity)
 ;;
 
 type block = No | Trusted | Untrusted;;
 
-let (++) (t1 : taintness) (t2 : taintness) : taintness = 
+let (++) (t1 : integrity) (t2 : integrity) : integrity = 
 	if t1 = t2 then t1 else Taint;;
