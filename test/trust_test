@@ -1,0 +1,48 @@
+(*
+// Possible data leakage.
+let trust pwd = {
+  let secret pass = "abcd" in 
+
+  let fun checkpwd : unit = 
+    print_string pass
+  in handle: {checkpwd}
+} in
+pwd.checkpwd()
+*)
+
+(*
+// Possible data leakage.
+let trust pwd = {
+    let secret pass = "abcd" in 
+  
+    let fun checkpwd : unit = 
+      print_string pass
+    in handle: {checkpwd}
+  } in
+let _ = pwd.checkpwd() in 
+print_string "hello"
+*)
+
+(*
+// Possible data leakage.
+let trust pwd = {
+    let secret pass = "abcd" in 
+  
+    let fun checkpwd : unit = 
+      print_string pass
+    in handle: {checkpwd}
+  } in
+if (let _ = pwd.checkpwd() in true) then print_string "hello" else print_string "hi"
+*)
+
+(*
+// doesn't leak
+let trust pwd = {
+    let secret pass = "abcd" in 
+  
+    let fun checkpwd : unit = 
+      print_string "hello"
+    in handle: {checkpwd}
+  } in
+pwd.checkpwd()
+*)

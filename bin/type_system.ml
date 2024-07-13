@@ -106,9 +106,9 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
     let t2, c2 = type_of ~into_block:into_block ((x,(t1,c1))::gamma) cxt e2 in 
     ( match t with 
     | Some tt -> 
-      if t1 = tt then t2, join c2 cxt
+      if t1 = tt then t2, join c1 (join c2 cxt)
       else raise(Type_Error("Bad type annotation at "^(string_of_loc (e.loc))))
-    | None -> t2, join c2 cxt
+    | None -> t2, join c1 (join c2 cxt)
     )
   | If(e1, e2, e3) ->
     let t1, c1 = type_of ~into_block:into_block gamma cxt e1 in 
@@ -117,7 +117,6 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
       let t2, c2 = type_of ~into_block:into_block gamma cxt' e2 in
       let t3, c3 = type_of ~into_block:into_block gamma cxt' e3 in
       if t2 <= t3 then t2, join (join c1 cxt) (join c2 c3)
-      (* Conservative! I also should constraint branches to the same confidentiality level *)
       else raise (Type_Error 
         ("\"If-Rule\": branches have different types: then is "^(string_of_ttype t2)^", else is "^(string_of_ttype t3)
         ^" - at Token: "^(string_of_loc (e.loc))))
@@ -126,8 +125,8 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
     ( match fun_type with 
       (Tfun(t1,t2) as t) ->
         let gamma' = (f, (t, Public)) :: (x, (t1, Public)) :: gamma in
-        let t_res, _ = type_of ~into_block:into_block gamma' cxt body in 
-        if (t_res) <= t2 then t, cxt
+        let t_res, cxt' = type_of ~into_block:into_block gamma' cxt body in 
+        if (t_res) <= t2 then t, join cxt' cxt
         else
         raise (Type_Error("Function return type does not match. "
             ^"Expected "^(string_of_ttype (t_res))^" got "
@@ -220,21 +219,23 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
   | NativeFunction(_) -> (* Need to handle print confidentiality check !!! *)
     raise ( Error_of_Inconsistence("type system: !!! Prohibit use of Native Functions !!! at: "^(string_of_loc e.loc)))
   | Trust(b) -> 
-    if into_block = No then TtrustedBlock(type_of_trusted b gamma []), cxt
+    if into_block = No then TtrustedBlock(type_of_trusted b start_env []), cxt
     else raise (Type_Error("Cannot have nested blocks."))
   | Access(tb, field) -> 
-    let tbtype, tbconf =  type_of ~into_block:into_block gamma cxt tb in 
+    let tbtype, _ =  type_of ~into_block:into_block gamma cxt tb in 
     ( match tbtype, field.value with
     | TtrustedBlock(env), Var(id) -> (* Only public functions can be accessed in trusted blocks *)
       ( match List.assoc_opt id env with
-      | Some (Tfun(_) as t ,Public) -> t, join cxt tbconf
-      | Some (_, Private) -> raise (Type_Error("Secret field cannot be accessed. Error at: "^(string_of_loc e.loc)))
-      | Some (_, Public) -> raise(Type_system_Failed("type_of:access: found public non-function object; at "^(string_of_loc e.loc)))
+      (* non-handled functions *)
+      | Some (Tfun(_), Private) -> raise (Type_Error("Cannot access to non-handled functions. Error at: "^(string_of_loc e.loc)))
+      (* handled functions or functions that work with secret data *)
+      | Some (Tfun(_) as t, c) -> t, join cxt c
+      | Some (_, _) -> raise(Type_Error("Cannot access to non-handled items; at "^(string_of_loc e.loc)))
       | None -> raise (Type_Error("Field "^id^" not found in block at: "^(string_of_loc tb.loc)))
       )
     | _, Var(_) -> raise (Type_Error("A block was expected in access operation at: "^(string_of_loc tb.loc)))
     | _, _ -> raise (Type_Error("An identifier was expected in access operation at: "^(string_of_loc field.loc))) )
-  | Secret(_) -> (* Is not possible to have secret data outside trusted blocks - syntax constraint *)
+  | SecretData(_) -> (* Is not possible to have secret data outside trusted blocks - syntax constraint *)
     raise (Error_of_Inconsistence("type_of: unexpected secret data outside trusted block: "
     ^(string_of_loc e.loc) ))
   | Handle(_) -> (* Is not possible to have handled exp outside trusted blocks - syntax constraint *)
@@ -258,8 +259,8 @@ and type_of_trusted (e : located_exp) (env : (ttype * confidentiality) env) (tb 
   | Let(x, t, e1, e2) -> (* checks rhs type, adds to env and tb and checks the body type *)
     let t', c' = 
       ( match e1.value with
-      | Secret(s) -> (* secret data are followed into information flow analysis *)
-        let ts, cs = type_of ~into_block:Trusted env Private s in
+      | SecretData(s) -> (* secret data are followed into information flow analysis *)
+        let ts, cs = type_of ~into_block:Trusted env Secret s in
         (match ts with  (* Only data can be secret *)
         | Tint
         | Tbool
@@ -272,19 +273,20 @@ and type_of_trusted (e : located_exp) (env : (ttype * confidentiality) env) (tb 
         )
       | Trust(_) -> raise (Type_Error("Cannot have nested blocks. At: "^(string_of_loc e.loc)))
       (* non-secret data are still private, but they are not followed in information flow analysis *)
-      | _ -> type_of ~into_block:Trusted env Public e1 
+      | _ -> type_of ~into_block:Trusted env Private e1 
       ) in 
     (match t with 
-    | Some tt -> if t' = tt then type_of_trusted e2 ((x,(t',c'))::env) ((x, (t',Private))::tb)
+    | Some tt -> if t' = tt then type_of_trusted e2 ((x,(t',c'))::env) ((x, (t', c'))::tb)
       else raise(Type_Error("Bad type annotation at "^(string_of_loc (e.loc))))
-    | None -> type_of_trusted e2 ((x,(t',c'))::env) ((x, (t',Private))::tb)
+    | None -> type_of_trusted e2 ((x,(t',c'))::env) ((x,(t', c'))::tb)
     )
   | Handle(l) -> (* for each item i, adds (i, (type_of i, Public)) to tb -> shadowing *)
     let add_f (f : located_exp) = 
       (match f.value with
       | Var(name) -> 
         (match List.assoc_opt name tb with  (* Check that the function has been defined in the block *)
-        | Some (Tfun(_) as c,_) -> (name, (c, Public))
+        | Some (Tfun(_) as t, Secret) -> (name, (t, Secret))
+        | Some (Tfun(_) as t, Private) -> (name, (t, Public))
         | Some (_) -> raise(Type_Error("A Function was expected at: "^(string_of_loc f.loc)))
         | _ -> raise(Type_Error("Handled Function must be declared into the block. At: "^(string_of_loc f.loc)))
         )

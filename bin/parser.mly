@@ -205,7 +205,7 @@ trust_expr:
       let (e1, e2, e3) = e in
       match s with
       | None -> Let(e1, e2, e3, e4) |@| $loc
-      | Some _ -> Let(e1, e2, (Secret(e3) |@| $loc), e4) |@| $loc 
+      | Some _ -> Let(e1, e2, (SecretData(e3) |@| $loc), e4) |@| $loc 
     }
   
 | HANDLE ":" e = delimited("{", separated_nonempty_list(";", simple_expr), "}")

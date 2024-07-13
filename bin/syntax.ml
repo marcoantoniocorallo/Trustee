@@ -46,7 +46,7 @@ type exp =
 	| NativeFunction of ( value -> value ) * ide option 
 																										(* (ocaml code, arg_name) *)
 	| Trust of located_exp														(* Trust block of code and data *)
-	| Secret of located_exp														(* Secret expression *)
+	| SecretData of located_exp												(* Secret expression *)
 	| Handle of located_exp list											(* Interface fn between trusted and untrusted code *)
 	| Access of located_exp * located_exp							(* Access to trusted block name *)
 	| Plugin of located_exp														(* Untrusted block of code and data *)
@@ -89,8 +89,9 @@ and value =
 	[@@deriving show]
 
 and confidentiality = 
-	| Private
-	| Public
+	| Secret 	(* Data subject to information flow *)
+	| Private	(* Non-secret data and non-handled functions *)
+	| Public	(* Handled functions *)
 	[@@ deriving show]
 
 and integrity = 
@@ -105,12 +106,12 @@ and block = No | Trusted | Untrusted
 let (++) (t1 : integrity) (t2 : integrity) : integrity = 
 	if t1 = t2 then t1 else Taint;;
 
-let (<<) (c1 : confidentiality) (c2 : confidentiality) : bool = 
-	match c1, c2 with
-	| Public, _ 
-	| _, Private -> true
-	| _, _ -> false;;
-
-let join e e' = if e = Public then e' else Private ;;
-
-let meet e e' = if e = Public then Public else e';;
+let join e e' = 
+	match e, e' with
+	| c1, c2 when c1 = c2 -> c1
+	| Public, _ -> e'
+	| _, Secret -> Secret
+	| Secret, _ -> Secret
+	| _, Public -> e
+	| _ -> raise(Exceptions.Error_of_Inconsistence("Join combination unmatched: "^(show_confidentiality e)^" - "^(show_confidentiality e')))
+;;

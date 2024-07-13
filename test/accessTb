@@ -7,8 +7,9 @@ let trust pwd = {
   handle: {checkpwd}
 } in pwd.checkpwd
 *)
+
 (*
-(* Failure! Secret variable access *)
+(* Failure! secret variable access *)
 let trust pwd = {
   let secret pass = "abcd" in
 
@@ -18,7 +19,7 @@ let trust pwd = {
 *)
 
 (*
-(* a variable defined inside the block requires an external var *)
+(* cannot use external var into blocks *)
 let a = "pippo" in 
 let trust pwd = {
   let secret pass = "abcd" in

@@ -120,7 +120,7 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 		else 
 			if t = Taint then raise (Security_Error("(Possible) malicious access to trusted block. Abort."))
 			else 
-				let v' = eval_trusted b env [] Untaint in 
+				let v' = eval_trusted b start_env [] Untaint in 
 				TrustedBlock(v'), t
 	| Access(tb, field) -> 
 		let tbv, _ =  eval ~into_block:into_block tb env t in 
@@ -130,7 +130,7 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 			else List.assoc id tb_env |> fst
 		| _,_ -> raise(Type_system_Failed("Access op. with wrong types at: "^(string_of_loc e.loc)))
 		)
-	| Secret(_) -> 
+	| SecretData(_) -> 
 		raise (Error_of_Inconsistence("eval: unexpected secret data outside trusted block: "^(string_of_loc e.loc) ))
 	| Handle(_) -> 
 		raise (Error_of_Inconsistence("eval: unexpected handled exp outside trusted block: "^(string_of_loc e.loc) ))
@@ -151,7 +151,7 @@ and eval_trusted	(e : located_exp) (env :(value * integrity) env)
 	| Let(x, _, eRhs, letBody) -> (* evaluates rhs, adds to env and tb and eval(_trusted) the body *)
 		let xVal = 
 			( match eRhs.value with
-			| Secret(s) -> let v, _ = eval ~into_block:Trusted s env t in v, t
+			| SecretData(s) -> let v, _ = eval ~into_block:Trusted s env t in v, t
 			| Trust(_) -> raise (Type_system_Failed("Cannot have nested blocks."))
 			| _ -> eval ~into_block:Trusted eRhs env t
 			) in 
