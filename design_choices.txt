@@ -71,8 +71,9 @@
   Infatti, non potendo modificare la memoria, l'unico tipo di funzione taint sono i plugin
 
 - Information flow: 
-  - Assegnamento: propago senza sollevare eccezione. 
-    L'eccezione viene sollevata solo per stampa di valori
+  - Assegnamento: l'idea è di propagare senza sollevare eccezione. 
+    L'eccezione verrebbe sollevata per la stampa di valori.
+    In realtà, essendo un'analisi statica, non va in esecuzione se vi è un data leak
 
   - IF: approccio conservativo, valuto la join tra la confidenzialità dei due branch,
     messi a loro volta in join con il contesto e la guardia
@@ -81,3 +82,5 @@
     public, per le funzioni handled;
     private, per dati non-secret e funzioni non-handled;
     secret, per i dati secret;
+
+Nota: il ricco type system permette di avere a run-time esclusivamente le informazioni sull'integrity

@@ -127,7 +127,7 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 		( match tbv, field.value with 
 		| TrustedBlock(tb_env), Var(id) -> 
 			if t = Taint then raise (Security_Error("(Possible) malicious access to trusted block. Abort."))
-			else List.assoc id tb_env |> fst
+			else List.assoc id tb_env
 		| _,_ -> raise(Type_system_Failed("Access op. with wrong types at: "^(string_of_loc e.loc)))
 		)
 	| SecretData(_) -> 
@@ -143,9 +143,9 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 (* Evaluates a trusted block of expression to an <ide -> value * confidentiality> environment 
  * note: the only constructs possible in a trusted block are (also secret) declaration and handle
  *)
-and eval_trusted	(e : located_exp) (env :(value * integrity) env) 
-									(tb : ((value * integrity) * confidentiality) env) (t : integrity) 
-											: ((value * integrity) * confidentiality) env = 
+and eval_trusted	(e : located_exp) (env : (value * integrity) env) 
+									(tb : (value * integrity) env) (t : integrity) 
+											: (value * integrity) env = 
 	if t = Taint then raise(Security_Error("Trusted block in taint status. Abort."));
 	match e.value with
 	| Let(x, _, eRhs, letBody) -> (* evaluates rhs, adds to env and tb and eval(_trusted) the body *)
@@ -156,12 +156,12 @@ and eval_trusted	(e : located_exp) (env :(value * integrity) env)
 			| _ -> eval ~into_block:Trusted eRhs env t
 			) in 
 		let letEnv = (x, xVal) :: env in
-		let tb' = (x, (xVal, Private))::tb in 
+		let tb' = (x, xVal)::tb in 
 		eval_trusted letBody letEnv tb' t
 	| Handle(l) -> (* for each item i, adds (i, (eval i, Public)) to tb *)
 		let add_f (f : located_exp) = 
 			(match eval ~into_block:Trusted f env t with
-			| Closure(name,_,_,_) as c, t -> (name, ((c,t), Public))
+			| Closure(name,_,_,_) as c, t -> (name, (c,t))
 			| _ -> raise(Type_system_Failed("eval_trusted: not-function value in handle at: "^(string_of_loc e.loc)))
 			) in		
 		(List.map (add_f) l)@tb

@@ -297,4 +297,8 @@ and type_of_trusted (e : located_exp) (env : (ttype * confidentiality) env) (tb 
               ^(Syntax.show_exp other)^" at: "^(string_of_loc e.loc) ))
 ;;
 
-let type_check e = type_of type_env Public e
+let type_check e = 
+  let t, c = type_of type_env Public e in 
+  if c = Secret 
+    then raise(Security_Error("The program could contain a Data leakage."))
+  else t

@@ -3,8 +3,7 @@ open Utils;;
 open Type_system;;
 
 let eval code = 
-  let _, conf = type_check code in 
-  if conf = Secret then raise(Security_Error("The program could contain a Data leakage."));
+  let _ = type_check code in 
   print_endline (string_of_value (Interpreter.eval code)) 
 
 let print_usage () = 
@@ -30,5 +29,7 @@ let () =
                         (string_of_position (Lexing.lexeme_start_p (Option.get !lexbuf)))
       (* Type Error *)
       | Type_Error(s) -> Printf.fprintf stderr "Type Error: %s\n" s
+      (* Security Error *)
+      | Security_Error(s) -> Printf.fprintf stderr "Security Error: %s\n" s
       (* Other exceptions raised by the interpreter *)
       | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn)
