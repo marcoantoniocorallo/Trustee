@@ -133,7 +133,7 @@ expr:
 | INCLUDE e = PARSED
     { 
       match e.value with
-      | Let(_,_, { loc = _; value = Plugin(_)},_) -> e
+      | Let(_,_, { loc = _; value = PluginData(_)},_) -> e
       | _ -> raise(Exceptions.Type_Error("A plugin was expected in include statement at: "^(Utils.string_of_loc e.loc)))
     }
 
@@ -158,10 +158,10 @@ let_expr:
     }
 
 | TRUST name = ID "=" "{" e = trust_expr "}"
-    { (name, None, Trust(e) |@| $loc ) }
+    { (name, None, Trust(name, e) |@| $loc ) }
 
 | PLUGIN name = ID "=" "{" e = expr "}"
-    { (name, None, Plugin(e) |@| $loc ) }
+    { (name, None, PluginData(e) |@| $loc ) }
 
 (** simple_expr is a syntactical category used for disambiguing the grammar. *)
 simple_expr:

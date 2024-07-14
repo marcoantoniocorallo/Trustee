@@ -44,11 +44,11 @@ type exp =
 	| Tail of located_exp															(* Return the list without the first el *)
 	| NativeFunction of ( value -> value ) * ide option 
 																										(* (ocaml code, arg_name) *)
-	| Trust of located_exp														(* Trust block of code and data *)
+	| Trust of ide * located_exp											(* Trust block of code and data *)
 	| SecretData of located_exp												(* Secret expression *)
 	| Handle of located_exp list											(* Interface fn between trusted and untrusted code *)
 	| Access of located_exp * located_exp							(* Access to trusted block name *)
-	| Plugin of located_exp														(* Untrusted block of code and data *)
+	| PluginData of located_exp												(* Untrusted block of code and data *)
 	| Assert of located_exp * bool										(* Snd arg tell if we want to test the taintness *)
 																										(* assert(x, true) fail if x is taint *)
 	[@@deriving show]
@@ -90,9 +90,10 @@ and value =
 	[@@deriving show]
 
 and confidentiality = 
-	| Secret 	(* Data subject to information flow *)
-	| Private	(* Non-secret data and non-handled functions *)
-	| Public	(* Handled functions *)
+	| Top 									
+	| Plugin | Secret of ide 	(* Data (of a given block) subject to information flow *)
+	| Private									(* Non-secret data and non-handled functions in trusted blocks *)
+	| Bottom									(* Public *)
 	[@@ deriving show]
 
 and integrity = 
@@ -110,9 +111,16 @@ let (++) (t1 : integrity) (t2 : integrity) : integrity =
 let join e e' = 
 	match e, e' with
 	| c1, c2 when c1 = c2 -> c1
-	| Public, _ -> e'
-	| _, Secret -> Secret
-	| Secret, _ -> Secret
-	| _, Public -> e
+	| Secret _, Secret _
+	| Plugin, Secret _ 
+	| Secret _, Plugin
+	| Top, _ 
+	| _, Top 							-> Top 
+	| Bottom , _ 					-> e'
+	| _, Bottom 					-> e 
+	| Secret i, Private 	
+	| Private, Secret i 	-> Secret i
+	| Plugin, Private
+	| Private, Plugin 		-> Plugin
 	| _ -> raise(Exceptions.Error_of_Inconsistence("Join combination unmatched: "^(show_confidentiality e)^" - "^(show_confidentiality e')))
 ;;

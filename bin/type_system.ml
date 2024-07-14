@@ -45,7 +45,7 @@ let type_env = [
   "print_string", Tfun(Tstring, Tunit);
 ];;
 
-let type_env = List.map (fun (i,t) -> (i, (t, Public))) type_env;;
+let type_env = List.map (fun (i,t) -> (i, (t, Bottom))) type_env;;
 
 (** Typing rule in a given type environment gamma *)
 let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confidentiality) env)
@@ -135,7 +135,8 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
   | Fun(f, x, fun_type, body) ->
     ( match fun_type with 
       (Tfun(t1,t2) as t) ->
-        let gamma' = (f, (t, Public)) :: (x, (t1, Public)) :: gamma in
+        let level = if into_block=Untrusted then Plugin else Bottom in 
+        let gamma' = (f, (t, level)) :: (x, (t1, level)) :: gamma in
         let t_res, cxt' = type_of ~into_block:into_block gamma' cxt body in 
         if (t_res) <= t2 then t, join cxt' cxt
         else
@@ -224,8 +225,8 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
     )
   | NativeFunction(_) -> (* Need to handle print confidentiality check !!! *)
     raise ( Error_of_Inconsistence("type system: !!! Prohibit use of Native Functions !!! at: "^(string_of_loc e.loc)))
-  | Trust(b) -> 
-    if into_block = No then TtrustedBlock(type_of_trusted b start_env []), cxt
+  | Trust(id, b) -> 
+    if into_block = No then TtrustedBlock(type_of_trusted id b start_env []), cxt
     else raise (Type_Error("Cannot have nested blocks."))
   | Access(tb, field) -> 
     let tbtype, _ =  type_of ~into_block:into_block gamma cxt tb in 
@@ -247,7 +248,7 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
   | Handle(_) -> (* Is not possible to have handled exp outside trusted blocks - syntax constraint *)
     raise (Error_of_Inconsistence("type_of: unexpected handled exp outside trusted block: "
     ^(string_of_loc e.loc) ))
-  | Plugin(e) -> (* eval in an empty env *)
+  | PluginData(e) -> (* eval in an empty env *)
     if into_block = No then 
       let v, c = type_of ~into_block:Untrusted start_env cxt e in
       (match v with
@@ -267,13 +268,14 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
 (* Evaluates a trusted block of expression to an <ide -> ttype * confidentiality> environment 
  * note: the only constructs possible in a trusted block are (also secret) declaration and handle
  *)
-and type_of_trusted (e : located_exp) (env : (ttype * confidentiality) env) (tb : (ttype * confidentiality) env) : (ttype * confidentiality) env = 
+and type_of_trusted (name : ide) (e : located_exp) (env : (ttype * confidentiality) env) 
+                    (tb : (ttype * confidentiality) env) : (ttype * confidentiality) env = 
   match e.value with
   | Let(x, t, e1, e2) -> (* checks rhs type, adds to env and tb and checks the body type *)
     let t', c' = 
       ( match e1.value with
       | SecretData(s) -> (* secret data are followed into information flow analysis *)
-        let ts, cs = type_of ~into_block:Trusted env Secret s in
+        let ts, cs = type_of ~into_block:Trusted env (Secret(name)) s in
         (match ts with  (* Only data can be secret *)
         | Tint
         | Tbool
@@ -289,17 +291,17 @@ and type_of_trusted (e : located_exp) (env : (ttype * confidentiality) env) (tb 
       | _ -> type_of ~into_block:Trusted env Private e1 
       ) in 
     (match t with 
-    | Some tt -> if t' = tt then type_of_trusted e2 ((x,(t',c'))::env) ((x, (t', c'))::tb)
+    | Some tt -> if t' = tt then type_of_trusted name e2 ((x,(t',c'))::env) ((x, (t', c'))::tb)
       else raise(Type_Error("Bad type annotation at "^(string_of_loc (e.loc))))
-    | None -> type_of_trusted e2 ((x,(t',c'))::env) ((x,(t', c'))::tb)
+    | None -> type_of_trusted name e2 ((x,(t',c'))::env) ((x,(t', c'))::tb)
     )
   | Handle(l) -> (* for each item i, adds (i, (type_of i, Public)) to tb -> shadowing *)
     let add_f (f : located_exp) = 
       (match f.value with
       | Var(name) -> 
         (match List.assoc_opt name tb with  (* Check that the function has been defined in the block *)
-        | Some (Tfun(_) as t, Secret) -> (name, (t, Secret))
-        | Some (Tfun(_) as t, Private) -> (name, (t, Public))
+        | Some (Tfun(_) as t, (Secret(_) as c)) -> (name, (t, c))
+        | Some (Tfun(_) as t, _ ) -> (name, (t, Bottom))
         | Some (_) -> raise(Type_Error("A Function was expected at: "^(string_of_loc f.loc)))
         | _ -> raise(Type_Error("Handled Function must be declared into the block. At: "^(string_of_loc f.loc)))
         )
@@ -311,7 +313,7 @@ and type_of_trusted (e : located_exp) (env : (ttype * confidentiality) env) (tb 
 ;;
 
 let type_check e = 
-  let t, c = type_of type_env Public e in 
-  if c = Secret 
-    then raise(Security_Error("The program could contain a Data leakage."))
-  else t
+  let t, c = type_of type_env Bottom e in 
+  match c with
+  | Top -> raise(Security_Error("The program could contain a Data leakage."))
+  | _ -> t 

@@ -1,0 +1,18 @@
+let trust pwd = {
+  let secret pass = "abcd1" in                           // this var has confidentiality secret(pwd)
+
+  let fun checkpwd (guess : string) : bool = 
+    pass = guess in
+  handle: {checkpwd}
+} in
+
+let trust pwd = {
+  let pass = "abcd2" in 
+  let secret baba = "baba" in                           // this var has confidentiality secret(pwd)
+
+  let fun checkpwd2 (guess : string) : bool = 
+    pass = guess in
+  handle: {checkpwd2}
+} in
+
+pwd.checkpwd

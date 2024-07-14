@@ -108,7 +108,7 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 		| None	 -> (* get primitives *)
 			f Unit, Taint 
 		)
-	| Trust(b) -> 
+	| Trust(_, b) -> 
 		if into_block <> No then raise (Type_Error("Cannot have nested blocks."))
 		else 
 			if t = Taint then raise (Security_Error("(Possible) malicious access to trusted block. Abort."))
@@ -127,7 +127,7 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 		raise (Error_of_Inconsistence("eval: unexpected secret data outside trusted block: "^(string_of_loc e.loc) ))
 	| Handle(_) -> 
 		raise (Error_of_Inconsistence("eval: unexpected handled exp outside trusted block: "^(string_of_loc e.loc) ))
-	| Plugin(e) ->
+	| PluginData(e) ->
 		if into_block <> No then raise (Type_Error("Cannot have nested blocks."))
 		else
 			let v' = eval ~into_block:Untrusted e start_env Taint in 

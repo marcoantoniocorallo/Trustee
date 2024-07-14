@@ -85,4 +85,7 @@
 
 - Primitive di asserzione "semplici" (su espressioni) e sulla taintness delle espressioni
 
+- Mentre top, bottom, secret_i e plugin sono ordinati in un reticolo, private è utilizzato
+  solo per "l'access control" i.e. per non far accedere a membri non-publici dei blocchi
+
 Nota: il ricco type system permette di avere a run-time esclusivamente le informazioni sull'integrity
