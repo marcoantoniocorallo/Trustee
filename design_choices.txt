@@ -83,4 +83,6 @@
     private, per dati non-secret e funzioni non-handled;
     secret, per i dati secret;
 
+- Primitive di asserzione "semplici" (su espressioni) e sulla taintness delle espressioni
+
 Nota: il ricco type system permette di avere a run-time esclusivamente le informazioni sull'integrity

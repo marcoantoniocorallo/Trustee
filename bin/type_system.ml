@@ -249,7 +249,14 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
       | _ -> raise(Type_Error("A plugin must implement a function. At: "^(string_of_loc e.loc)))
       )
     else raise (Type_Error("Cannot have nested blocks."))
-
+  | Assert(p, taint_flag) -> 
+    let t, c = type_of ~into_block:into_block gamma cxt p in
+    if taint_flag then t, join c cxt (* just assert if the expression p is taint *)
+    else (* assert (as usual) the predicate p *)
+      ( match t with 
+      | Tbool -> t, join c cxt
+      | _ -> raise(Type_Error("A boolean predicate was expected in assertion: "^(string_of_loc p.loc)))
+      )
 
 (* Evaluates a trusted block of expression to an <ide -> ttype * confidentiality> environment 
  * note: the only constructs possible in a trusted block are (also secret) declaration and handle

@@ -139,6 +139,14 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 		else
 			let v' = eval ~into_block:Untrusted e start_env Taint in 
 			UntrustedBlock(v'), t
+	| Assert(p, taint_flag) -> 
+		let v', t' = eval ~into_block:into_block p env t in
+		if taint_flag then (* just assert if the expression p is taint *)
+			if t' = Taint then raise(Assertion_Failure("Possible taint expression: "^(string_of_loc p.loc)))
+			else Bool true, t' ++ t
+		else (* assert (as usual) the predicate p *)
+			if v' = Bool true then v', t' ++ t
+			else raise(Assertion_Failure(string_of_loc (p.loc)))
 
 (* Evaluates a trusted block of expression to an <ide -> value * confidentiality> environment 
  * note: the only constructs possible in a trusted block are (also secret) declaration and handle

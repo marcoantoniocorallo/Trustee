@@ -31,5 +31,7 @@ let () =
       | Type_Error(s) -> Printf.fprintf stderr "Type Error: %s\n" s
       (* Security Error *)
       | Security_Error(s) -> Printf.fprintf stderr "Security Error: %s\n" s
+      (* Assertions *)
+      | Assertion_Failure(s) -> Printf.fprintf stderr "Assertion Failure: %s\n" s
       (* Other exceptions raised by the interpreter *)
       | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn)

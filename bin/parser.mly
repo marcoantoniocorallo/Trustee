@@ -53,7 +53,7 @@
 %token PROJ
 %token CONS_OP "::" HEAD "hd" TAIL "tl" IS_EMPTY
 %token COMMA "," COLON ":" SEMICOLON ";" ARROW "->" DOT "."
-%token TRUST  SECRET  HANDLE  PLUGIN INCLUDE
+%token TRUST  SECRET  HANDLE  PLUGIN INCLUDE ASSERT TAINT
 %token <Syntax.located_exp>PARSED
 %token EOF
 
@@ -138,6 +138,12 @@ expr:
       match e.value with
       | Let(_,_, { loc = _; value = Plugin(_)},_) -> e
       | _ -> raise(Exceptions.Type_Error("A plugin was expected in include statement at: "^(Utils.string_of_loc e.loc)))
+    }
+
+| ASSERT t = option(TAINT) e = simple_expr 
+    { 
+      let t = if Option.is_some t then true else false in 
+      Assert(e, t) |@| $loc 
     }
 
 let_expr:
