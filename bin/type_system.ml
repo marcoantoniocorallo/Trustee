@@ -74,20 +74,22 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
     | _ -> tx, c
     )
   (* Define equality and comparison for each simple type *)
-  | Bop(e1, "=", e2) -> 
+  | Bop(e1, "=", e2) 
+  | Bop(e1, "<>", e2) -> 
     let t1, c1 = type_of ~into_block:into_block gamma cxt e1 in
     let t2, c2 = type_of ~into_block:into_block gamma cxt e2 in
     ( match t1, t2 with
+    | Tlist(_), Tlist(_)
+    | Ttuple(_), Ttuple(_) ->  Tbool, (join c1 c2)
     | Tfun(_,_), Tfun(_,_) ->   raise (Type_Error ("Equality of functional values"
                                 ^(string_of_loc (e.loc))))
-    | t1', t2' when t1' <= t2' || t2' <= t1' -> Tbool, (join c1 c2)
+    | t1', t2' when t1' <= t2' -> Tbool, (join c1 c2)
     | _, _ -> raise (Type_Error ("Error in the arguments of equality"^(string_of_loc (e.loc))))
     )
   | Bop(e1, "<", e2)
   | Bop(e1, "<=", e2)
   | Bop(e1, ">", e2)
-  | Bop(e1, ">=", e2)
-  | Bop(e1, "<>", e2) ->
+  | Bop(e1, ">=", e2) ->
     let t1, c1 = type_of ~into_block:into_block gamma cxt e1 in
     let t2, c2 = type_of ~into_block:into_block gamma cxt e2 in
     ( match t1, t2 with
