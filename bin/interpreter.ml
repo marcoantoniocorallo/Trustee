@@ -101,13 +101,6 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 		| ListV(_::xs) -> ListV(xs), t'
 		| _ ->  raise (Type_system_Failed("eval:Tail - "^(string_of_value list)
             ^" at Token: "^(string_of_loc (e.loc) ) ) ) )
-	| IsEmpty(l) -> 
-		let list, t' = eval ~into_block:into_block l env t in 
-		(match list with
-		| ListV([]) -> Bool(true), t'
-		| ListV(_) ->  Bool(false), t'
-		| _ -> raise (Type_system_Failed("eval:IsEmpty - "^(string_of_value list)
-						^" at Token: "^(string_of_loc (e.loc) ) ) ) )
 	| NativeFunction(f, name_arg) ->
 		( match name_arg with
 		| Some x -> (* print primitives *)

@@ -51,7 +51,7 @@
 %token LESS "<" LEQ "<=" GREATER ">" GEQ ">=" EQ "=" NEQ "<>"
 %token AND "&&" OR "||" NOT "!" CONCAT "^"
 %token PROJ
-%token CONS_OP "::" HEAD "hd" TAIL "tl" IS_EMPTY
+%token CONS_OP "::" HEAD "hd" TAIL "tl"
 %token COMMA "," COLON ":" SEMICOLON ";" ARROW "->" DOT "."
 %token TRUST  SECRET  HANDLE  PLUGIN INCLUDE ASSERT TAINT
 %token <Syntax.located_exp>PARSED
@@ -129,9 +129,6 @@ expr:
 
 | TAIL l = simple_expr
     { Tail(l) |@| $loc }
-
-| IS_EMPTY l = simple_expr
-    { IsEmpty(l) |@| $loc }
 
 | INCLUDE e = PARSED
     { 

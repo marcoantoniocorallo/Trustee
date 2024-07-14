@@ -42,7 +42,6 @@ type exp =
 	| Cons_op of located_exp * located_exp						(* Concatenates an exp in head of a list *)
 	| Head of located_exp															(* Return the first element of a list *)
 	| Tail of located_exp															(* Return the list without the first el *)
-	| IsEmpty of located_exp													(* Tests if a list is empty *)
 	| NativeFunction of ( value -> value ) * ide option 
 																										(* (ocaml code, arg_name) *)
 	| Trust of located_exp														(* Trust block of code and data *)

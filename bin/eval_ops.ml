@@ -20,6 +20,8 @@ let eval_bop v1 op v2 =
   | ("=", Char i1, Char i2) -> Bool (if i1 = i2 then true else false)
   | ("=", Bool i1, Bool i2) -> Bool (if i1 = i2 then true else false)
   | ("=", String i1, String i2) -> Bool (if i1 = i2 then true else false)
+  | ("=", ListV(l1), ListV(l2)) ->  Bool (l1 = l2)
+  | ("=", Tuple(l1), Tuple(l2)) -> Bool (l1 = l2)
   | ("<>", Int i1, Int i2) -> Bool (if i1 <> i2 then true else false)
   | ("<>", Float i1, Float i2) -> Bool (if i1 <> i2 then true else false)
   | ("<>", Char i1, Char i2) -> Bool (if i1 <> i2 then true else false)

@@ -74,7 +74,15 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
     | _ -> tx, c
     )
   (* Define equality and comparison for each simple type *)
-  | Bop(e1, "=", e2)
+  | Bop(e1, "=", e2) -> 
+    let t1, c1 = type_of ~into_block:into_block gamma cxt e1 in
+    let t2, c2 = type_of ~into_block:into_block gamma cxt e2 in
+    ( match t1, t2 with
+    | Tfun(_,_), Tfun(_,_) ->   raise (Type_Error ("Equality of functional values"
+                                ^(string_of_loc (e.loc))))
+    | t1', t2' when t1' <= t2' || t2' <= t1' -> Tbool, (join c1 c2)
+    | _, _ -> raise (Type_Error ("Error in the arguments of equality"^(string_of_loc (e.loc))))
+    )
   | Bop(e1, "<", e2)
   | Bop(e1, "<=", e2)
   | Bop(e1, ">", e2)
@@ -83,12 +91,13 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
     let t1, c1 = type_of ~into_block:into_block gamma cxt e1 in
     let t2, c2 = type_of ~into_block:into_block gamma cxt e2 in
     ( match t1, t2 with
-    | Ttuple(_), Ttuple(_)
-    | Tlist(_), Tlist(_) ->     raise (Type_Error ("Equality of compound values"
+    | Ttuple(_), Ttuple(_) ->   raise (Type_Error ("Tuple only support comparison (=)."
+                                ^(string_of_loc (e.loc))))
+    | Tlist(_), Tlist(_) ->     raise (Type_Error ("Lists only support comparison (=)."
                                 ^(string_of_loc (e.loc))))
     | Tfun(_,_), Tfun(_,_) ->   raise (Type_Error ("Equality of functional values"
                                 ^(string_of_loc (e.loc))))
-    | t1', t2' when t1' = t2' -> Tbool, (join c1 c2)
+    | t1', t2' when t1' <= t2' -> Tbool, (join c1 c2)
     | _, _ -> raise (Type_Error ("Error in the arguments of equality"^(string_of_loc (e.loc))))
     )
   | Bop(e1, op, e2) ->
@@ -210,11 +219,6 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
     | Tlist(None) -> raise(Type_Error("Type error: attempting to tail an empty list!"
                                     ^(string_of_loc (e.loc))))
     | _ -> raise(Type_Error("Tail of a non-list value!"^(string_of_loc (l.loc))))
-    )
-  | IsEmpty(l) -> (* 'a list -> bool *)
-    ( match type_of ~into_block:into_block gamma cxt l with
-    | Tlist(_), c -> Tbool, join cxt c
-    | _ -> raise(Type_Error("Check emptiness of a non-list value!"^(string_of_loc (l.loc))))
     )
   | NativeFunction(_) -> (* Need to handle print confidentiality check !!! *)
     raise ( Error_of_Inconsistence("type system: !!! Prohibit use of Native Functions !!! at: "^(string_of_loc e.loc)))
