@@ -1,10 +1,39 @@
 // cannot access to external vars
 (*
+  let p = include <p> in 
+  let trust pwd = {
+    let pass = "abcd" in
+    let _ = p 5 in // a function was expected, got plugin
+    let fun checkpwd (guess : string) : bool = guess = pass in
+    handle: {checkpwd}
+  } in pwd
+*)
+
+(*
+// prevented by blocking the plugin arg passing
 let p = include <p> in 
 let trust pwd = {
-  let pass = "abcd" in
-  let _ = p 5 in // a function was expected, got plugin
-  let fun checkpwd (guess : string) : bool = guess = pass in
-  handle: {checkpwd}
-} in pwd
+  let pass = 3 in
+  let fun f (g : int -> int) : int = g pass
+  in
+  handle: {f}
+} in pwd.f p
 *)
+
+(*
+let p = include <p> in 
+let trust pwd = {
+  let pass = 3 in
+  let fun f (g : int -> int) : int = g pass
+  in
+  handle: {f}
+} in pwd.f ((lambda : (int -> int) -> p)())
+*)
+
+let p = include <p> in 
+let trust pwd = {
+  let pass = 3 in
+  let fun f (g : int -> int) : int = g pass
+  in
+  handle: {f}
+} in ((lambda : int -> pwd.f p)())

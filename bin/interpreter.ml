@@ -53,10 +53,13 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
             ^(string_of_value v1)^" at Token: "^(string_of_loc (e.loc) ) ) ) )
 	| Fun(f, x, _, fBody) -> Closure(f, x, fBody, env), t
 	| Call(eFun, eArg) ->
-		(match eval ~into_block:into_block eFun env t with
-		| Closure (f, x, fBody, fDeclEnv) as fClosure, f_t 
-		| UntrustedBlock((Closure (f, x, fBody, fDeclEnv)) as fClosure, f_t), _ ->
-			let xVal, xTaint = eval ~into_block:into_block eArg env t in
+		let f', t' = eval ~into_block:into_block eFun env t in 
+		let xVal, xTaint = eval ~into_block:into_block eArg env t in
+		(match f', t', xVal with
+		| _, _, UntrustedBlock(_) -> 
+			raise(Type_Error("Cannot pass a plugin as function parameter: "^(string_of_loc eArg.loc)));
+		| Closure (f, x, fBody, fDeclEnv) as fClosure, f_t, _
+		| UntrustedBlock((Closure (f, x, fBody, fDeclEnv)) as fClosure, f_t), _, _ ->
 			let fBodyEnv = (x, (xVal, xTaint)) :: (f, (fClosure, f_t)) :: fDeclEnv in 
 			let f_res, t_res = eval ~into_block:into_block fBody fBodyEnv t in 
 			f_res, t_res ++ f_t ++ xTaint
