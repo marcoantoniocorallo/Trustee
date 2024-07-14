@@ -65,7 +65,8 @@ rule tokenize = parse
 												with Not_found -> ID word
 											}
   | "<" ( [^ '\n' '>']+ as filename) '>'
-                      { (* bad but quick solution to menhir dependency cycle! TODO: Parser Functor *)
+                      { (* bad but quick solution to menhir dependency cycle! 
+                                    TODO: Parser Functor *)
                         (* can include only files into the plugin dir! *)
                         let substr = String.split_on_char '/' filename in 
                         match substr with 

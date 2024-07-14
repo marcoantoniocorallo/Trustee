@@ -1,4 +1,4 @@
-(** Syntax of the language : definition of ADT, EVT, types and Environment *)
+(** Syntax of the language : definition of AST, EVT, types and Environment *)
 
 type 'v env = (string * 'v) list
 [@@deriving show]
@@ -91,16 +91,18 @@ and value =
 
 and confidentiality = 
 	| Top 									
-	| Plugin | Secret of ide 	(* Data (of a given block) subject to information flow *)
+	| Public | Secret of ide	(* Data (of a given block) subject to information flow *)
 	| Private									(* Non-secret data and non-handled functions in trusted blocks *)
 	| Bottom									(* Public *)
 	[@@ deriving show]
 
+(* Taintness *)
 and integrity = 
 	| Taint
 	| Untaint
 	[@@deriving show]
 
+(* Auxiliary type to keep trace of where the control flow is *)
 and block = No | Trusted | Untrusted
 	[@@deriving show]
 ;;
@@ -112,15 +114,15 @@ let join e e' =
 	match e, e' with
 	| c1, c2 when c1 = c2 -> c1
 	| Secret _, Secret _
-	| Plugin, Secret _ 
-	| Secret _, Plugin
+	| Public, Secret _ 
+	| Secret _, Public
 	| Top, _ 
 	| _, Top 							-> Top 
 	| Bottom , _ 					-> e'
 	| _, Bottom 					-> e 
 	| Secret i, Private 	
 	| Private, Secret i 	-> Secret i
-	| Plugin, Private
-	| Private, Plugin 		-> Plugin
+	| Public, Private
+	| Private, Public 		-> Public
 	| _ -> raise(Exceptions.Error_of_Inconsistence("Join combination unmatched: "^(show_confidentiality e)^" - "^(show_confidentiality e')))
 ;;

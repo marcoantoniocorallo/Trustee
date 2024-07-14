@@ -72,6 +72,7 @@ let string_of_loc (startp, endp) =
   Printf.sprintf "%s-%s" sp ep
 ;;
 
+(* shorthand for readability *)
 let get_value (vt : (value * integrity)) = fst vt;;
 
 let get_taint (vt : (value * integrity)) = snd vt;;

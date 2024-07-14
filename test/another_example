@@ -1,0 +1,22 @@
+let trust pwd = {
+  let secret pass = "abcd" in 
+
+  let fun checkpwd (guess : string) : bool = 
+    pass = guess in
+  handle: {checkpwd}
+} in
+
+// note: the following tb has not a secret level! 
+// But public is at the same level of secret in the lattice so their join is Top
+let trust filter = {
+  let fun string_f (predicate : string -> bool) (l : string list) : string list = 
+    if l = [] then [] 
+    else 
+      if predicate (hd l) then (hd l)::(string_f predicate (tl l))
+      else (string_f predicate (tl l))
+    in handle: {string_f}
+} in
+
+let v1 = pwd.checkpwd "pippo" in 
+let v2 = filter.string_f (lambda (x : string) : bool -> x="abc") ["pippo", "abc", "abcd", "pluto", "paperino"] in 
+print_string "Two different secret levels in the same program but it works as it should do"

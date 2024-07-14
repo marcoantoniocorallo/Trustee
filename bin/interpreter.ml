@@ -6,8 +6,13 @@ open Eval_ops;;
 open Exceptions;;
 
 (**
-	Interpreter that implements dynamic taint analysis.
-  Note: type annotations are here ignored: they are already checked by the type checker.
+ * Interpreter that implements dynamic taint analysis.
+ * Note: type annotations are here ignored: they are already checked by the type checker.
+ * @params:	into_block: keep trace of where we are: Trusted, Untrusted, Outside of blocks
+ *					start_env: the starting def env, where blocks are type-checked
+ *					e: expression to type-check
+ *					env: environment
+ *					t : integrity level context						
  *)
 let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_exp) 
 							(env : (value * integrity) env) (t : integrity) : (value * integrity) = 
@@ -141,8 +146,12 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 			if v' = Bool true then v', t' ++ t
 			else raise(Assertion_Failure(string_of_loc (p.loc)))
 
-(* Evaluates a trusted block of expression to an <ide -> value * confidentiality> environment 
- * note: the only constructs possible in a trusted block are (also secret) declaration and handle
+(** Evaluates a trusted block of expression to an environment that keep trace of the integrity
+ * note: the only constructs possible in a trusted block are declaration and handle
+ * @params:	e: expression to type-check
+ *          env: global type environment
+ *          tb: environment of the trusted block, that this function returns
+ *					t: integrity level context						
  *)
 and eval_trusted	(e : located_exp) (env : (value * integrity) env) 
 									(tb : (value * integrity) env) (t : integrity) 

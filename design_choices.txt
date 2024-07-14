@@ -88,4 +88,9 @@
 - Mentre top, bottom, secret_i e plugin sono ordinati in un reticolo, private è utilizzato
   solo per "l'access control" i.e. per non far accedere a membri non-publici dei blocchi
 
+- Si poteva pensare di avere due elementi "secret" e "plugin", senza distinguere tra i vari 
+  trusted blocks. Tuttavia, un trusted block che implementa la funzione filter (finora vista dentro
+  un plugin) avrebbe costituito ugualmente un problema. Vulnerabilità strutturali (Structural:
+  The anomalous behavior arises when several components are integrated ).
+
 Nota: il ricco type system permette di avere a run-time esclusivamente le informazioni sull'integrity

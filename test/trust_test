@@ -1,4 +1,3 @@
-(*
 // trusted code is considered verified, so even if there is a data leak, it is not denied
 let trust pwd = {
   let secret pass = "abcd" in 
@@ -8,4 +7,3 @@ let trust pwd = {
   in handle: {checkpwd}
 } in
 pwd.checkpwd()
-*)

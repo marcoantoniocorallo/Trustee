@@ -1,5 +1,5 @@
 // Type System prevents data leakage
-(*
+
 let trust pwd = {
   let secret pass = "abcd" in 
 
@@ -9,7 +9,7 @@ let trust pwd = {
 } in
 let filter = include <filter> in
 filter pwd.checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"]
-*)
+
 
 (* data leeak
 let trust pwd = {
