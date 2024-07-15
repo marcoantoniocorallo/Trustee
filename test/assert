@@ -7,7 +7,6 @@ assert (x <> 5)
 *)
 
 (*
-// data leakage prevented
 let trust pwd = {
 let secret pass = "abcd" in 
 
@@ -18,7 +17,7 @@ let fun checkpwd (guess : string) : bool =
 
 let filter = include <filter> in
 let l = filter pwd.checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"] in 
-assert (is_empty l)
+assert (l = [])
 *)
 
 (*
@@ -32,7 +31,7 @@ let trust pwd = {
 
 let filter = include <filter> in
 let l = filter pwd.checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"] in 
-assert (not(is_empty l))
+assert (l <> [])
 *)
 
 (*

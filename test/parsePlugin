@@ -17,7 +17,7 @@ let plugin p = {
     let s = "s" in
     let fun f (x : int) : int = x+1
 in f
-} in p.f 5
+} in p 5
 *)
 
 (* secret not allowed! *)

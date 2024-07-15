@@ -1,8 +1,0 @@
-let fun f : trusted_block = 
-  let trust t = { 
-    let secret pwd = "pwd" in 
-    let fun f : bool = false in 
-    handle:{f} 
-  } in 
-  t
-in (f()).f

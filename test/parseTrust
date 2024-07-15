@@ -113,7 +113,7 @@ let trust pwd = {
 } in pwd.checkpwd
 *)
 
-(* Cannot have nested blocks *)
+(* plugin in a trust block is not recognized *)
 (*
 let trust pwd = {
   let secret pass = "abcd" in 

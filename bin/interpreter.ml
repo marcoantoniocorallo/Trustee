@@ -144,9 +144,9 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 		let v', t' = eval ~into_block:into_block p env t in
 		if taint_flag then (* just assert if the expression p is taint *)
 			if t' = Taint then raise(Assertion_Failure("Possible taint expression: "^(string_of_loc p.loc)))
-			else Bool true, t' ++ t
+			else Unit, t' ++ t
 		else (* assert (as usual) the predicate p *)
-			if v' = Bool true then v', t' ++ t
+			if v' = Bool true then Unit, t' ++ t
 			else raise(Assertion_Failure(string_of_loc (p.loc)))
 
 (** Evaluates a trusted block of expression to an environment that keep trace of the integrity

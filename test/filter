@@ -11,7 +11,7 @@ let filter = include <filter> in
 filter pwd.checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"]
 
 
-(* data leeak
+(*
 let trust pwd = {
   let secret pass = "abcd" in 
 
@@ -20,7 +20,9 @@ let trust pwd = {
   handle: {checkpwd}
 } in
 let filter = include <filter> in
-if (let _ = (filter (pwd.checkpwd) ["pippo", "abc", "abcd", "pluto", "paperino"]) in true) then print_string "hello" else print_string "hi"
+if (let _ = (filter (pwd.checkpwd) ["pippo", "abc", "abcd", "pluto", "paperino"]) in true) 
+  then print_string "hello" 
+else print_string "hi"
 *)
 
 (*
