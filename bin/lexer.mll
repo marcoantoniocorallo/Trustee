@@ -35,7 +35,6 @@
       ("secret",  SECRET);
       ("handle",  HANDLE);
       ("plugin", PLUGIN);
-      ("include", INCLUDE);
       ("assert", ASSERT);
       ("taint", TAINT);
 		]
@@ -64,10 +63,10 @@ rule tokenize = parse
 												try Hashtbl.find keyword_table word
 												with Not_found -> ID word
 											}
-  | "<" ( [^ '\n' '>']+ as filename) '>'
-                      { (* bad but quick solution to menhir dependency cycle! 
-                                    TODO: Parser Functor *)
+  | "<" string as s ">"
+                      { (* bad but quick solution to menhir dependency cycle! *)
                         (* can include only files into the plugin dir! *)
+                        let filename = String.sub s 2 ((String.length s)-3) in 
                         let substr = String.split_on_char '/' filename in 
                         match substr with 
                         | [x] -> 

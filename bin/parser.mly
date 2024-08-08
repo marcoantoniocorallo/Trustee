@@ -53,7 +53,7 @@
 %token PROJ
 %token CONS_OP "::" HEAD "hd" TAIL "tl"
 %token COMMA "," COLON ":" SEMICOLON ";" ARROW "->" DOT "."
-%token TRUST  SECRET  HANDLE  PLUGIN INCLUDE ASSERT TAINT
+%token TRUST  SECRET  HANDLE  PLUGIN ASSERT TAINT
 %token <Syntax.located_exp>PARSED
 %token EOF
 
@@ -130,7 +130,7 @@ expr:
 | TAIL l = simple_expr
     { Tail(l) |@| $loc }
 
-| INCLUDE e = PARSED
+| e = PARSED
     { 
       match e.value with
       | Let(_,_, { loc = _; value = PluginData(_)},_) -> e

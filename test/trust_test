@@ -1,9 +1,40 @@
+(*
 // trusted code is considered verified, so even if there is a data leak, it is not denied
 let trust pwd = {
   let secret pass = "abcd" in 
 
   let fun checkpwd : unit = 
     print_string pass
-  in handle: {checkpwd}
+  in
+
+  handle: {checkpwd}
 } in
 pwd.checkpwd()
+*)
+
+// Non-Interference fail because the trusted block leaks.
+// The assumption is that trusted blocks doesn't leak
+(*
+let trust pwd = {
+  let secret pass = "abcd" in 
+
+  let fun call_checkpwd : unit = 
+    if pass = "abcd" then print_string "hello" else print_string "hi"
+  in
+  handle: {call_checkpwd}
+} in
+pwd.call_checkpwd()
+*)
+
+(* // access to private member + data leakage
+let trust pwd = {
+  let secret pass = true in 
+
+  let fun nonhandled : bool = pass in 
+
+  let fun call_checkpwd : bool = pass
+  in
+  handle: {call_checkpwd}
+} in
+pwd.nonhandled()
+*)

@@ -94,3 +94,10 @@
   The anomalous behavior arises when several components are integrated ).
 
 Nota: il ricco type system permette di avere a run-time esclusivamente le informazioni sull'integrity
+
+---------------------------------------------------------------------------------------------------
+
+- Rimossa la direttiva INCLUDE: ora un plugin dichiarato nel file "p" può essere incluso con <"p">
+
+- Un controllo statico di correttezza dei tipi viene fatto dal parser in fase di parsing: 
+quando si parsa un plugin viene controllato che sia effettivamente un plugin!
