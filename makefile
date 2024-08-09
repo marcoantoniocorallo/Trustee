@@ -2,15 +2,18 @@ all: build
 
 build:
 	dune build
-	mkdir plugin -p
+	mkdir -p plugin
 	cp -fr test/plugin/* ./plugin
 	cp -f _build/default/bin/main.exe ./TFhree
 
-install: build 
+install: build
 	mkdir -p _install
 	cp -f ./LICENSE _install/LICENSE
 	cp -f ./README.md _install/README.md
 	cp -f _build/default/bin/main.exe _install/main.exe
+
+test:
+	dune runtest
 
 clear: clean
 
@@ -20,4 +23,4 @@ clean:
 	rm -f ./TFhree
 	rm -fr plugin
 
-.PHONY: all build install clear clean
+.PHONY: all build install clear clean test

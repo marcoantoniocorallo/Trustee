@@ -1,3 +1,0 @@
-let fun concat (s1 : string) : string -> string = 
-  let fun concat2 (s2 : string) : string = s1^s2 in concat2 
-  in concat "Hello " "World"

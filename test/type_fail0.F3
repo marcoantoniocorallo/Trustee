@@ -1,3 +1,0 @@
-let s1 = "Hello" in 
-let s2 = 5 in 
-s1^s2

@@ -1,1 +1,0 @@
-(lambda (x:(int -> int)) : (int->int) -> x)(lambda (y:int) : int -> y)

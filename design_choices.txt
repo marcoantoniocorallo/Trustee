@@ -101,3 +101,5 @@ Nota: il ricco type system permette di avere a run-time esclusivamente le inform
 
 - Un controllo statico di correttezza dei tipi viene fatto dal parser in fase di parsing: 
 quando si parsa un plugin viene controllato che sia effettivamente un plugin!
+
+- aggiornare dipendenze con ppx_test e ppx_expect

@@ -1,0 +1,18 @@
+(library
+ (public_name TFhree)
+ (name TFhree)
+ (libraries menhirLib)
+ (modules (:standard))
+ (inline_tests)
+ (preprocess (pps ppx_deriving.std ppx_inline_test ppx_assert ppx_sexp_conv))
+)
+
+(menhir 
+ (modules parser))
+
+(rule
+ (targets lexer.ml)
+ (deps lexer.mll)
+ (action (run ocamllex -q %{deps})))
+
+(include_subdirs unqualified)

@@ -1,0 +1,7 @@
+(library
+ (name test)
+ (libraries TFhree)
+ (modules (:standard))
+ (inline_tests)
+ (preprocess (pps ppx_deriving.std ppx_inline_test ppx_assert ppx_expect))
+)
