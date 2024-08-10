@@ -148,6 +148,7 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 		else (* assert (as usual) the predicate p *)
 			if v' = Bool true then Unit, t' ++ t
 			else raise(Assertion_Failure(string_of_loc (p.loc)))
+	| Declassify(e) -> eval ~into_block:into_block e env t 
 
 (** Evaluates a trusted block of expression to an environment that keep trace of the integrity
  * note: the only constructs possible in a trusted block are declaration and handle

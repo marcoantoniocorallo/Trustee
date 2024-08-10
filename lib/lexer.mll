@@ -37,6 +37,7 @@
       ("plugin", PLUGIN);
       ("assert", ASSERT);
       ("taint", TAINT);
+      ("declassify", DECLASSIFY);
 		]
 
 }

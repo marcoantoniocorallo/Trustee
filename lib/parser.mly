@@ -53,7 +53,7 @@
 %token PROJ
 %token CONS_OP "::" HEAD "hd" TAIL "tl"
 %token COMMA "," COLON ":" SEMICOLON ";" ARROW "->" DOT "."
-%token TRUST  SECRET  HANDLE  PLUGIN ASSERT TAINT
+%token TRUST  SECRET  HANDLE  PLUGIN ASSERT TAINT DECLASSIFY
 %token <Syntax.located_exp>PARSED
 %token EOF
 
@@ -142,6 +142,9 @@ expr:
       let t = if Option.is_some t then true else false in 
       Assert(e, t) |@| $loc 
     }
+
+| DECLASSIFY e = simple_expr
+    { Declassify(e) |@| $loc }
 
 let_expr:
 | id = ID t = option(preceded(":", ptype)) "=" e1 = expr

@@ -51,6 +51,7 @@ type exp =
 	| PluginData of located_exp												(* Untrusted block of code and data *)
 	| Assert of located_exp * bool										(* Snd arg tell if we want to test the taintness *)
 																										(* assert(x, true) fail if x is taint *)
+	| Declassify of located_exp
 	[@@deriving show]
 
 and located_exp = exp located                 			(* ( exp * location ) *)
@@ -68,7 +69,7 @@ and ttype =
   | Ttuple of ttype list                        		(*  Compound type: tuple *)
   | Tlist of ttype option                           (*  Compound type: list *)
 	(* Block of data and code are associated to type environments *)
-	|	TtrustedBlock of ((ttype * confidentiality)	env	[@opaque])
+	|	TtrustedBlock of ((ttype * qualifier * confidentiality)	env	[@opaque])
 	| TuntrustedBlock of ttype
 	[@@deriving show]
 
@@ -89,11 +90,15 @@ and value =
 	| UntrustedBlock of (value * integrity)
 	[@@deriving show]
 
+and qualifier = 
+	| Private
+	| Public
+
 and confidentiality = 
-	| Top 									
-	| Public | Secret of ide	(* Data (of a given block) subject to information flow *)
-	| Private									(* Non-secret data and non-handled functions in trusted blocks *)
-	| Bottom									(* Public *)
+	| Top 					(* Information leak *)
+	| Plugin | Secret of ide	(* Data (of a given block) subject to IF *)
+	| Normal of ide
+	| Bottom				(* Public *)
 	[@@ deriving show]
 
 (* Taintness *)
@@ -113,22 +118,24 @@ let (++) (t1 : integrity) (t2 : integrity) : integrity =
 let join e e' = 
 	match e, e' with
 	| c1, c2 when c1 = c2 -> c1
+	| Normal x1, Secret x2
+	| Secret x2, Normal x1 -> if x1 = x2 then Secret x1 else Top
 	| Secret _, Secret _
-	| Public, Secret _ 
-	| Secret _, Public
+	| Plugin, Secret _ 
+	| Plugin, Normal _
+	| Normal _, Normal _
+	| Normal _, Plugin
+	| Secret _, Plugin
 	| Top, _ 
-	| _, Top 							-> Top 
-	| Bottom , _ 					-> e'
-	| _, Bottom 					-> e 
-	| Secret i, Private 	
-	| Private, Secret i 	-> Secret i
-	| Public, Private
-	| Private, Public 		-> Public
+	| _, Top 			-> Top 
+	| Bottom , _ 	-> e'
+	| _, Bottom 	-> e 
 	| _ -> raise(Exceptions.Error_of_Inconsistence("Join combination unmatched: "^(show_confidentiality e)^" - "^(show_confidentiality e')))
 ;;
 
 let compare_values (v1 : value) (v2 : value) : bool = match v1, v2 with
 	(* for simplicity, closures are not deeply inspected; *)
+	(* note: this function is used only for testing purposes *)
 	| Closure(s1,_, _,_), Closure(s2,_,_,_) -> s1 = s2 
 	| x1, x2 when x1 = x2 -> true
 	| _ -> false
