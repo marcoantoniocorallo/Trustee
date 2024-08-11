@@ -277,8 +277,13 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
       )
   | Declassify(e) -> 
     if into_block = Trusted then 
-      let t, _ = type_of ~into_block:into_block gamma cxt e in
-      t, cxt
+      let t, c = type_of ~into_block:into_block gamma cxt e in
+      match c with 
+      | Secret s -> t, Normal s
+      | other  -> 
+        raise(Error_of_Inconsistence("Attempt to declassify non-secret data: "
+        ^(Syntax.show_confidentiality other)^" at: "^(string_of_loc e.loc)))
+        (* t, cxt *)
     else raise(Type_Error("Declassification is only possible inside trusted blocks. At: "^(string_of_loc e.loc)))
 
 (** Type checker for expressions defined inside a trusted block.

@@ -95,10 +95,11 @@ and qualifier =
 	| Public
 
 and confidentiality = 
-	| Top 					(* Information leak *)
+	| Top 						(* Information leak *)
+	| SecretCombined	(* More trusted blocks interact themselfs *)
 	| Plugin | Secret of ide	(* Data (of a given block) subject to IF *)
-	| Normal of ide
-	| Bottom				(* Public *)
+	| Normal of ide		(* non-secret data of a given trusted block *)
+	| Bottom					(* Public *)
 	[@@ deriving show]
 
 (* Taintness *)
@@ -117,19 +118,19 @@ let (++) (t1 : integrity) (t2 : integrity) : integrity =
 
 let join e e' = 
 	match e, e' with
-	| c1, c2 when c1 = c2 -> c1
+	| c1, c2 when c1 = c2 	-> c1
 	| Normal x1, Secret x2
-	| Secret x2, Normal x1 -> if x1 = x2 then Secret x1 else Top
-	| Secret _, Secret _
+	| Secret x2, Normal x1	-> if x1 = x2 then Secret x1 else SecretCombined
+	| Normal _, Normal _
+	| Secret _, Secret _		-> SecretCombined
 	| Plugin, Secret _ 
 	| Plugin, Normal _
-	| Normal _, Normal _
 	| Normal _, Plugin
 	| Secret _, Plugin
 	| Top, _ 
 	| _, Top 			-> Top 
-	| Bottom , _ 	-> e'
-	| _, Bottom 	-> e 
+	| Bottom, x
+	| x, Bottom 	-> x
 	| _ -> raise(Exceptions.Error_of_Inconsistence("Join combination unmatched: "^(show_confidentiality e)^" - "^(show_confidentiality e')))
 ;;
 

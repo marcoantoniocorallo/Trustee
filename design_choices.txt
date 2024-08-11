@@ -103,3 +103,32 @@ Nota: il ricco type system permette di avere a run-time esclusivamente le inform
 quando si parsa un plugin viene controllato che sia effettivamente un plugin!
 
 - aggiornare dipendenze con ppx_test e ppx_expect
+
+- Il reticolo di confidenzialità
+            T
+      /     |
+     /   SecretCombined
+    /       |         \
+Plugin   Secret_i  Secret_j
+   \        |         /
+    \    Normal_i  Normal_j
+     \       |      /
+          Bottom 
+  Si spiega in questo modo:
+  - Bottom è il livello di confidenzialità iniziale (top-level/main);
+  - Top segnala la possibilità di data lekage;
+  - Codice non-secret all'interno di un trusted block b avrà confidenzialità Normal_b
+  - Codice secret all'interno di un trusted block b avrà confidenzialità Secret_b
+  - Se codice normal_b interagisce con secret_b, diventa secret_b
+  - Se codice normal_x/secret_x interagisce con normal_y/secret_y, si ottiene SecretCombined
+    in questo modo più trusted block (codice verificato) possono interagire tra loro. 
+    Nota: niente mi vieta di avere un trusted block che implementa una funzione filter e 
+    viene poi applicato al trusted block checkpwd, ricadendo nell'esempio malevolo 
+    presentato nel testo dell'homework.
+    Tuttavia, in questo caso si parla di codice trusted, conosciuto e fidato dall'utente     
+  - Allo stesso modo, se codice plugin interagisce con un trusted block si ottiene Top 
+    => data leak 
+  Quindi i blocchi plugin possono essere combinati tra di loro e possono interagire con 
+  codice standard, mentre i blocchi trusted possono interagire esclusivamente con 
+  codice standard e non possono essere combinati tra di loro;
+
