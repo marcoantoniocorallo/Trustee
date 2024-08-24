@@ -1,17 +1,28 @@
+(* Output: Security Error: The program could contain a Data leakage. 
+   A plugin is used for filtering pwd - given scenario *)
 let code = 
   {|
-    // Type System prevents data leakage
-    let trust pwd = {
-      let secret pass = "abcd" in 
+  // Type System prevents data leakage
+  let trust pwd = {
+    let secret pass = "abcd" in 
 
-      let fun checkpwd (guess : string) : bool = 
-        declassify(pass = guess) in
+    let fun checkpwd (guess : string) : bool = 
+      declassify(pass = guess) in
 
-      handle: {checkpwd}
-    } in
-    let filter = <"filter"> in
-    filter pwd.checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"]
-  |}
+    handle: {checkpwd}
+  } in
+
+  // plugin is not imported here for simplicity: automated test env doesn't find the file
+  let plugin filter = {
+    let fun string_f (predicate : string -> bool) (l : string list) : string list = 
+      if l = [] then [] 
+      else 
+        if predicate (hd l) then (hd l)::(string_f predicate (tl l))
+        else (string_f predicate (tl l))
+    in string_f
+  } in 
+  filter pwd.checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"]
+|}
 ;;
 
 let%expect_test "Prevent filter data leak 1" =
@@ -24,6 +35,7 @@ let%expect_test "Prevent filter data leak 1" =
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
   [%expect {| TFhree.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
 
+
 let code = 
   {|
     let trust pwd = {
@@ -33,7 +45,15 @@ let code =
       declassify(pass = guess) in
     handle: {checkpwd}
   } in
-  let filter = <"filter"> in
+  // plugin is not imported here for simplicity: automated test env doesn't find the file
+  let plugin filter = {
+    let fun string_f (predicate : string -> bool) (l : string list) : string list = 
+      if l = [] then [] 
+      else 
+        if predicate (hd l) then (hd l)::(string_f predicate (tl l))
+        else (string_f predicate (tl l))
+    in string_f
+  } in 
   if (let _ = (filter (pwd.checkpwd) ["pippo", "abc", "abcd", "pluto", "paperino"]) in true) 
     then print_string "hello" 
   else print_string "hi"
@@ -60,7 +80,15 @@ let code =
         declassify(pass = guess) in
       handle: {checkpwd}
     } in
-    let filter = <"filter"> in
+    // plugin is not imported here for simplicity: automated test env doesn't find the file
+    let plugin filter = {
+      let fun string_f (predicate : string -> bool) (l : string list) : string list = 
+        if l = [] then [] 
+        else 
+          if predicate (hd l) then (hd l)::(string_f predicate (tl l))
+          else (string_f predicate (tl l))
+      in string_f
+    } in 
     let l = filter pwd.checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"] in 
     let fun print_list (ls : string list) : unit = 
       if ls <> [] then 
@@ -80,18 +108,3 @@ let%expect_test "Prevent filter data leak 3" =
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
   [%expect {| TFhree.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
-
-
-(*
-// In a version without confidential data, it provides pass but alert a possible tainted value
-let trust pwd = {
-  let pass = "abcd" in 
-
-  let fun checkpwd (guess : string) : bool = 
-    pass = guess in
-  handle: {checkpwd}
-} in
-
-let filter = include <filter> in
-filter pwd.checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"]
-*)

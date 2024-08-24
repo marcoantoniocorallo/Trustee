@@ -118,19 +118,23 @@ let (++) (t1 : integrity) (t2 : integrity) : integrity =
 
 let join e e' = 
 	match e, e' with
-	| c1, c2 when c1 = c2 	-> c1
+	| c1, c2 when c1 = c2 				-> c1
 	| Normal x1, Secret x2
-	| Secret x2, Normal x1	-> if x1 = x2 then Secret x1 else SecretCombined
+	| Secret x2, Normal x1				-> if x1 = x2 then Secret x1 else SecretCombined
 	| Normal _, Normal _
-	| Secret _, Secret _		-> SecretCombined
+	| Secret _, Secret _		
+	| SecretCombined, Secret _ 
+	| Secret _ , SecretCombined
+	| SecretCombined, Normal _
+	| Normal _, SecretCombined		-> SecretCombined
 	| Plugin, Secret _ 
 	| Plugin, Normal _
 	| Normal _, Plugin
 	| Secret _, Plugin
 	| Top, _ 
-	| _, Top 			-> Top 
+	| _, Top 											-> Top 
 	| Bottom, x
-	| x, Bottom 	-> x
+	| x, Bottom 									-> x
 	| _ -> raise(Exceptions.Error_of_Inconsistence("Join combination unmatched: "^(show_confidentiality e)^" - "^(show_confidentiality e')))
 ;;
 

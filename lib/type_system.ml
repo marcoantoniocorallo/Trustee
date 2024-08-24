@@ -279,7 +279,7 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
     if into_block = Trusted then 
       let t, c = type_of ~into_block:into_block gamma cxt e in
       match c with 
-      | Secret s -> t, Normal s
+      | Secret s -> t, join (Normal s) cxt
       | other  -> 
         raise(Error_of_Inconsistence("Attempt to declassify non-secret data: "
         ^(Syntax.show_confidentiality other)^" at: "^(string_of_loc e.loc)))

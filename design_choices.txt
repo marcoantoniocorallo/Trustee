@@ -104,6 +104,8 @@ quando si parsa un plugin viene controllato che sia effettivamente un plugin!
 
 - aggiornare dipendenze con ppx_test e ppx_expect
 
+- declassify statement possibile solo dentro i trusted block
+
 - Il reticolo di confidenzialità
             T
       /     |
@@ -125,10 +127,17 @@ Plugin   Secret_i  Secret_j
     Nota: niente mi vieta di avere un trusted block che implementa una funzione filter e 
     viene poi applicato al trusted block checkpwd, ricadendo nell'esempio malevolo 
     presentato nel testo dell'homework.
-    Tuttavia, in questo caso si parla di codice trusted, conosciuto e fidato dall'utente     
+    Tuttavia, in questo caso si parla di codice trusted, conosciuto e fidato dall'utente
+    dunque la correttezza/sicurezza del programma dato dalla composizione di più TB è 
+    demandata all'utente, che può analizzare i blocchi di codice (a differenza di quanto 
+    avviene per i plugin).
+    Se questo non fosse possibile,
   - Allo stesso modo, se codice plugin interagisce con un trusted block si ottiene Top 
     => data leak 
   Quindi i blocchi plugin possono essere combinati tra di loro e possono interagire con 
   codice standard, mentre i blocchi trusted possono interagire esclusivamente con 
-  codice standard e non possono essere combinati tra di loro;
+  codice standard e altri trusted block, ma non possono interagire con plugins;
 
+- Nota: l'interazione tra plugin e trusted blocks con confidenzialità "Normal _" 
+  deve dare Top (=> data leak) perchè i blocchi che usano declassify(.) all'interno 
+  hanno confidenzialità "Normal _". Permettere questo tipo di interazioni è pericoloso

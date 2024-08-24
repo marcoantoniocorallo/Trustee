@@ -118,16 +118,21 @@ let%expect_test "don't touch secret data" =
   [%expect {| abcd |}]
 
 
-(*
-// Non-Interference fail because the trusted block leaks.
-// The assumption is that trusted blocks doesn't leak
-let trust pwd = {
-  let secret pass = "abcd" in 
+let code = {| 
+  let pwd =
+    let pass = "abcd" in 
+    let fun checkpwd (guess : string) : bool = 
+      declassify(pass = guess) in
+    checkpwd
+    in pwd "abcd"
+|};;
 
-  let fun call_checkpwd : unit = 
-    if pass = "abcd" then print_string "hello" else print_string "hi"
-  in
-  handle: {call_checkpwd}
-} in
-pwd.call_checkpwd()
-*)
+let%expect_test "declassify outside of trusted blocks" =
+  let lexbuf = Lexing.from_string code in 
+  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+  try 
+    let _ = TFhree.Type_system.type_check code in 
+    TFhree.Interpreter.eval code |> ignore
+  with 
+  | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
+  [%expect {| TFhree.Exceptions.Type_Error("Declassification is only possible inside trusted blocks. At: (5, 18)-(5, 30)") |}]

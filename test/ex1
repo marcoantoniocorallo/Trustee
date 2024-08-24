@@ -1,11 +1,11 @@
 // Type System prevents data leakage
-    let trust pwd = {
-      let secret pass = "abcd" in 
+let trust pwd = {
+  let secret pass = "abcd" in 
 
-      let fun checkpwd (guess : string) : bool = 
-        declassify(pass = guess) in
+  let fun checkpwd (guess : string) : bool = 
+    let _ = print_string (declassify(pass)) in 
+    declassify(pass = guess) in
 
-      handle: {checkpwd}
-    } in
-    let filter = <"filter"> in
-    filter pwd.checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"]
+  handle: {checkpwd}
+} in
+pwd.checkpwd "abcd"

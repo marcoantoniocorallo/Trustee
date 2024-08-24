@@ -1,0 +1,10 @@
+// Non-Interference test!
+let trust pwd = {
+  let secret pass = "abcd" in 
+
+  let fun call_checkpwd : unit = 
+    if declassify(pass = "abcd") then print_string "hello" else print_string "hi"
+  in
+  handle: {call_checkpwd}
+} in
+pwd.call_checkpwd()
