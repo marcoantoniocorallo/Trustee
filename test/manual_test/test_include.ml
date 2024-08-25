@@ -1,4 +1,4 @@
-// let p =  <"p"> in p
+let p =  <"p"> in p
 // let p =  <"test/parsePlugin"> in p // no permissions!
 // let p =  <"plugin"> in p // not a file
 // let p =  <"plugin/w"> in p // no such file

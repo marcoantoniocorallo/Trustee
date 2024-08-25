@@ -53,7 +53,7 @@ let%expect_test "test_type_fail2" =
     TFhree.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Type_Error("functional application: argument type mismatch(6, 23)-(6, 32)function int list -> int got char list instead") |}]
+  [%expect {| TFhree.Exceptions.Type_Error("functional application: argument type mismatch(6, 23)-(6, 32)function (int list -> int) got char list instead") |}]
 
 
 let code = 
@@ -70,7 +70,7 @@ let%expect_test "test_type_fail3" =
     TFhree.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Type_Error("functional application: argument type mismatch(2, 33)-(2, 36)function int -> int got string instead") |}]
+  [%expect {| TFhree.Exceptions.Type_Error("functional application: argument type mismatch(2, 33)-(2, 36)function (int -> int) got string instead") |}]
 
   let code = 
     {|

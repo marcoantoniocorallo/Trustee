@@ -1,3 +1,4 @@
+// plugin cannot be passed as parameter
 let plugin pwd = {
   let pass = "abcd" in 
 
@@ -6,5 +7,5 @@ let plugin pwd = {
   checkpwd
 } in
 
-let filter = include <filter> in
+let filter = <"filter"> in
 filter pwd ["pippo", "abc", "abcd", "pluto", "paperino"]

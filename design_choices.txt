@@ -138,6 +138,12 @@ Plugin   Secret_i  Secret_j
   codice standard, mentre i blocchi trusted possono interagire esclusivamente con 
   codice standard e altri trusted block, ma non possono interagire con plugins;
 
+- Nota: Questo nuovo reticolo permette di bloccare automaticamente (e staticamente)
+  l'esecuzione di plugin all'interno di trusted block, qualora questi venissero
+  passati come argomenti (infatti non è possibile (vincolo sintattico) definire un 
+  plugin all'interno di un tb). Dunque non vi è più l'artificio a run-time che blocca
+  il passaggio di plugin come parametri!
+
 - Nota: l'interazione tra plugin e trusted blocks con confidenzialità "Normal _" 
   deve dare Top (=> data leak) perchè i blocchi che usano declassify(.) all'interno 
   hanno confidenzialità "Normal _". Permettere questo tipo di interazioni è pericoloso

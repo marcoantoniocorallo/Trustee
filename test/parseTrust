@@ -113,11 +113,11 @@ let trust pwd = {
 } in pwd.checkpwd
 *)
 
-(* plugin in a trust block is not recognized *)
+(* plugin in a trust block is not recognized (nested block) *)
 (*
 let trust pwd = {
   let secret pass = "abcd" in 
-  let plugin p = { let s="s" } in 
+  let plugin p = { let s="s"  in s} in 
   let fun checkpwd (guess : string) : bool = pass = guess in 
   handle: {checkpwd}
 } in pwd.checkpwd
@@ -130,7 +130,7 @@ let trust pwd = {
   let pippo = "hello" in 
     let pluto = "world" in 
       let fun f (x : int) : int = x+1 in 
-        let plugin p = { let s="s" } in 
+        let plugin p = { let s="s" in s } in 
   let xx = pippo^pluto in 
   let fun checkpwd (guess : string) : bool = pass = guess in 
   handle: {checkpwd}

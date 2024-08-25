@@ -1,0 +1,91 @@
+// plugin can be passed as parameter into a trusted block
+// but the interaction between them led to a potential data leak => blocked
+(*
+let succ = <"p"> in 
+let trust pwd = {
+  let secret pass = "abcd" in 
+
+  let fun checkpwd (guess : string) : bool = declassify(pass = guess) in 
+
+  let fun take_arg (foo : (int -> int)) : int = 
+    foo 7 in 
+  handle: {checkpwd; take_arg}
+} in 
+pwd.take_arg succ // data leak (prevented)
+//pwd.take_arg (lambda (x:int) : int -> x+1) // allowed
+*)
+
+(*
+// more malicious example
+let filter = <"filter"> in 
+let trust pwd = {
+  let secret pass = "abcd" in 
+
+  let fun checkpwd (guess : string) : bool = declassify(pass = guess) in 
+
+  let fun take_arg 
+  (foo : ((string -> bool) -> (string list) -> string list)) : string list = 
+    foo checkpwd ["pippo", "abcd", "pluto", "abc"]
+  in 
+  handle: {checkpwd; take_arg}
+} in 
+
+// allowed
+(*
+let fun string_f (predicate : string -> bool) (l : string list) : string list = 
+  if l = [] then [] 
+  else 
+    if predicate (hd l) then (hd l)::(string_f predicate (tl l))
+    else (string_f predicate (tl l))
+  in pwd.take_arg string_f
+*)
+// not allowed -> data leak (prevented)!
+pwd.take_arg filter
+*)
+
+// what if a function that returns a plugin is passed as parameter, 
+// and then the returned plugin is used into a tb?
+// --> data leak identified!
+(*
+let succ = <"p"> in 
+let trust pwd = {
+  let secret pass = "abcd" in 
+
+  let fun checkpwd (guess : string) : bool = declassify(pass = guess) in 
+
+  let fun take_arg (foo : unit -> (int -> int)) : int = 
+    foo() 7
+
+  in 
+  handle: {checkpwd; take_arg}
+} in 
+pwd.take_arg (lambda : (int->int) -> succ )
+//pwd.take_arg (lambda : (int->int) -> lambda (x:int) : int -> x+1 )
+*)
+
+(*
+// more malicious example
+let filter = <"filter"> in 
+let trust pwd = {
+  let secret pass = "abcd" in 
+
+  let fun checkpwd (guess : string) : bool = declassify(pass = guess) in 
+
+  let fun take_arg 
+  (foo : unit -> ((string -> bool) -> (string list) -> string list)) : string list = 
+    foo() checkpwd ["pippo", "abcd", "pluto", "abc"]
+  in 
+  handle: {checkpwd; take_arg}
+} in 
+
+// allowed
+let fun string_f (predicate : string -> bool) (l : string list) : string list = 
+  if l = [] then [] 
+  else 
+    if predicate (hd l) then (hd l)::(string_f predicate (tl l))
+    else (string_f predicate (tl l))
+  in pwd.take_arg (lambda : ((string -> bool) -> (string list) -> string list) -> string_f)
+
+// not allowed -> data leak (prevented)!
+//pwd.take_arg (lambda : ((string -> bool) -> (string list) -> string list) -> filter )
+*)
