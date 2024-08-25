@@ -133,11 +133,14 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
       let cxt' = join cxt c1 in 
       let t2, c2 = type_of ~into_block:into_block gamma cxt' e2 in
       let t3, c3 = type_of ~into_block:into_block gamma cxt' e3 in
-      if t2 <= t3 then t2, join (join c1 cxt) (join c2 c3)
-      else raise (Type_Error 
-        ("\"If-Rule\": branches have different types: then is "^(string_of_ttype t2)^", else is "^(string_of_ttype t3)
+      match t2, t3 with 
+      | TtrustedBlock _, TtrustedBlock _ -> 
+        raise (Type_Error ("If-Rule: trusted block are not comparable, so branches have different types. At Token: "^(string_of_loc (e.loc))))
+      | _, _ when t2 <= t3 -> t2, join (join c1 cxt) (join c2 c3)
+      | _, _ -> 
+        raise (Type_Error ("If-Rule: branches have different types: then is "^(string_of_ttype t2)^", else is "^(string_of_ttype t3)
         ^" - at Token: "^(string_of_loc (e.loc))))
-    else raise (Type_Error ("\"If-Rule\": if with no a boolean guard"^(string_of_loc (e.loc))))
+    else raise (Type_Error ("If-Rule: if with no a boolean guard"^(string_of_loc (e.loc))))
   | Fun(f, x, fun_type, body) ->
     ( match fun_type with 
       (Tfun(t1,t2) as t) ->

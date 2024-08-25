@@ -3,7 +3,7 @@ let trust pwd = {
   let secret pass = "abcd" in 
 
   let fun checkpwd (guess : string) : bool = 
-    let _ = print_string (declassify(pass)) in 
+    let _ = print_string pass in 
     declassify(pass = guess) in
 
   handle: {checkpwd}
