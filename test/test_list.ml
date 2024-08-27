@@ -9,7 +9,7 @@ let code =
 let value = ListV([ListV([Int(1); Int(2)])]);;
 
 let%test "test_list" =
-  let (@@) v1 v2 = TFhree.Syntax.compare_values v1 v2 in 
+  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
   let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
   let _ = TFhree.Type_system.type_check code in 

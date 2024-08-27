@@ -32,7 +32,7 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
     let v1, t1 = eval ~into_block:into_block e1 env t in 
     let v2, t2 = eval ~into_block:into_block e2 env t in 
     (try eval_bop v1 op v2, (t1 ++ t2)
-		with |_ ->	raise(Unsupported_Primitive("eval:Bop of "^op
+		with |Unsupported_Primitive(s) ->	raise(Unsupported_Primitive("eval:Bop of "^s
                 ^" at Token: "^(string_of_loc (e.loc) ) ) ) )
 	| Var x  -> lookup env x 
 	| Let(x, _, eRhs, letBody) ->

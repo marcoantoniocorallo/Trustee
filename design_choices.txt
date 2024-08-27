@@ -143,7 +143,16 @@ Plugin   Secret_i  Secret_j
   passati come argomenti (infatti non è possibile (vincolo sintattico) definire un 
   plugin all'interno di un tb). Dunque non vi è più l'artificio a run-time che blocca
   il passaggio di plugin come parametri!
+  Naturalmente, questo limita un po' l'usabilità del linguaggio dato che la commistione
+  di plugin e trusted block, anche quando sarebbe lecita, viene conservativamente trattata
+  come potenziale punto di leakage. Si tratta di una scelta progettuale che predilige
+  la soundness e la correttezza statica dei programmi all'usabilità, limitazione comunque
+  circoscritta a casi particolari.
 
 - Nota: l'interazione tra plugin e trusted blocks con confidenzialità "Normal _" 
   deve dare Top (=> data leak) perchè i blocchi che usano declassify(.) all'interno 
   hanno confidenzialità "Normal _". Permettere questo tipo di interazioni è pericoloso
+
+ - I trusted block sono ora comparabili e viene eseguita una pointer equality.
+ In questo modo non vi può essere leak di dati privati se un tb viene comparato a tb diversi.
+ 

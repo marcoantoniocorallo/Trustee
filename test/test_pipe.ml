@@ -9,7 +9,7 @@ let code =
 let value = String("lambda with annotations");;
 
 let%test "test_pipe" =
-  let (@@) v1 v2 = TFhree.Syntax.compare_values v1 v2 in 
+  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
   let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
   let _ = TFhree.Type_system.type_check code in 
@@ -27,7 +27,7 @@ let code =
 let value = String("lambda with annotations and other annotations");;
 
 let%test "test_pipe_of_pipe" =
-  let (@@) v1 v2 = TFhree.Syntax.compare_values v1 v2 in 
+  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
   let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
   let _ = TFhree.Type_system.type_check code in 
@@ -44,7 +44,7 @@ let code =
 let value = Int(15);;
 
 let%test "test_multiple_arguments_fn_pipe" =
-  let (@@) v1 v2 = TFhree.Syntax.compare_values v1 v2 in 
+  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
   let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
   let _ = TFhree.Type_system.type_check code in 
@@ -61,7 +61,7 @@ let code =
 let value = Int(15);;
 
 let%test "test_high_order_pipe" =
-  let (@@) v1 v2 = TFhree.Syntax.compare_values v1 v2 in 
+  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
   let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
   let _ = TFhree.Type_system.type_check code in 

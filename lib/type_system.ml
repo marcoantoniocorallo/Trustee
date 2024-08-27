@@ -14,10 +14,10 @@ let rec (<=) (t1 : ttype) (t2 : ttype) : bool = match t1, t2 with
 	| Tlist(None), Tlist(_) -> true
 	| Tlist(Some t1'), Tlist(Some t2') when t1' <= t2' -> true
 	| Ttuple(l1), Ttuple(l2) when List.length l1 = List.length l2 -> List.for_all2 (<=) l1 l2
-  | TuntrustedBlock(t1'), TuntrustedBlock(t2') (* plugin wrap function types *)
+  | TtrustedBlock(e1), TtrustedBlock(e2) -> e1 == e2 (* pointer equality *)
+  | TuntrustedBlock(t1'), TuntrustedBlock(t2') (* wrap function types -> no comparable*)
   | TuntrustedBlock(t1'), t2'
   | t1', TuntrustedBlock(t2') -> t1' <= t2'
-  | TtrustedBlock(_), TtrustedBlock(_)  (* block types are not comparable *)
 	| _ -> false
 
 (** The starting type environment. *)
@@ -86,7 +86,8 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
     let t2, c2 = type_of ~into_block:into_block gamma cxt e2 in
     ( match t1, t2 with
     | Tlist(_), Tlist(_)
-    | Ttuple(_), Ttuple(_) ->  Tbool, (join c1 c2)
+    | Ttuple(_), Ttuple(_) 
+    | TtrustedBlock _, TtrustedBlock _->  Tbool, (join c1 c2)
     | Tfun(_,_), Tfun(_,_) ->   raise (Type_Error ("Equality of functional values"
                                 ^(string_of_loc (e.loc))))
     | t1', t2' when t1' <= t2' -> Tbool, (join c1 c2)
@@ -134,9 +135,9 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
       let t2, c2 = type_of ~into_block:into_block gamma cxt' e2 in
       let t3, c3 = type_of ~into_block:into_block gamma cxt' e3 in
       match t2, t3 with 
-      | TtrustedBlock _, TtrustedBlock _ -> 
-        raise (Type_Error ("If-Rule: trusted block are not comparable, so branches have different types. At Token: "^(string_of_loc (e.loc))))
       | _, _ when t2 <= t3 -> t2, join (join c1 cxt) (join c2 c3)
+      | TtrustedBlock _, TtrustedBlock _ when not(t2 <= t3) -> 
+        raise (Type_Error ("If-Rule: branches return different trusted blocks. At Token: "^(string_of_loc (e.loc))))
       | _, _ -> 
         raise (Type_Error ("If-Rule: branches have different types: then is "^(string_of_ttype t2)^", else is "^(string_of_ttype t3)
         ^" - at Token: "^(string_of_loc (e.loc))))

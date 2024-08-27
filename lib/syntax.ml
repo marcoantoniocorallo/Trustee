@@ -137,11 +137,3 @@ let join e e' =
 	| x, Bottom 									-> x
 	| _ -> raise(Exceptions.Error_of_Inconsistence("Join combination unmatched: "^(show_confidentiality e)^" - "^(show_confidentiality e')))
 ;;
-
-let compare_values (v1 : value) (v2 : value) : bool = match v1, v2 with
-	(* for simplicity, closures are not deeply inspected; *)
-	(* note: this function is used only for testing purposes *)
-	| Closure(s1,_, _,_), Closure(s2,_,_,_) -> s1 = s2 
-	| x1, x2 when x1 = x2 -> true
-	| _ -> false
-;;

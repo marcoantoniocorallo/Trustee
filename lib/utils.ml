@@ -82,3 +82,11 @@ let get_ttype (tc : (ttype * confidentiality)) = fst tc;;
 let get_confidentiality (tc : (ttype * confidentiality)) = snd tc;;
 
 let dummy_value = { value = Empty; loc = (Lexing.dummy_pos, Lexing.dummy_pos) };;
+
+let test_cmp_values (v1 : value) (v2 : value) : bool = match v1, v2 with
+	(* for simplicity, closures are not deeply inspected; *)
+	(* note: this function is used only for testing purposes *)
+	| Closure(s1,_, _,_), Closure(s2,_,_,_) -> s1 = s2 
+	| x1, x2 when x1 = x2 -> true
+	| _ -> false
+;;

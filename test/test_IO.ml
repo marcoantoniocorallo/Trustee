@@ -91,7 +91,7 @@ let%expect_test "test_IO10" =
   [%expect {| c |}]
 
 let%test "test_IO11" =
-  let (@@) v1 v2 = TFhree.Syntax.compare_values v1 v2 in 
+  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
   let code = "print_string // closure" in 
   let lexbuf = Lexing.from_string code in 
   let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
@@ -100,7 +100,7 @@ let%test "test_IO11" =
   vval @@ (Closure("print_string","",TFhree.Utils.dummy_value, []))
 
 let%test "test_IO12" =
-  let (@@) v1 v2 = TFhree.Syntax.compare_values v1 v2 in 
+  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
   let code = "get_int // closure" in 
   let lexbuf = Lexing.from_string code in 
   let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
@@ -109,7 +109,7 @@ let%test "test_IO12" =
   vval @@ (Closure("get_int","",TFhree.Utils.dummy_value, []))
 
 let%test "test_IO13" =
-  let (@@) v1 v2 = TFhree.Syntax.compare_values v1 v2 in 
+  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
   let code = "get_int // closure" in 
   let lexbuf = Lexing.from_string code in 
   let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
