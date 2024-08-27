@@ -167,3 +167,14 @@ Plugin   Secret_i  Secret_j
   - Per migliorare l'usabilità e l'accuracy del type system, potremmo non trattare
     conservativamente i casi difficili, ma piuttosto demandare la gesitone a run-time 
     (type system ibrido statico-dinamico)
+
+- Nota: i plugin sono semplicemente dei wrapper per singole funzioni, e come tali possono
+  essere passate o restituite. Non c'è una type annotation per i plugin perchè questi 
+  vengono gestiti come funzioni.
+
+- Non-Interference è rispettata:
+  - se si tenta di accedere ad un field secret, o ad un field inesistente, viene restituita
+    la stessa eccezione, per non leakare dati;
+  - se un "if" effettua controlli su dati segreti, l'IF analysis blocca il programma.
+    Questo è un approccio conservativo e aggressivo, ma sound e safe. 
+    Questo può essere mitigato tramite l'uso non esagerato della direttiva declassify 
