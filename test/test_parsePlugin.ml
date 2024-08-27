@@ -19,7 +19,7 @@ let%expect_test "Parse plugin 1" =
     6
   |}]
 
-  let code = {|
+let code = {|
   (* nested blocks! *)
   let plugin p = {
     let trust t = { let fun f : int = 1 in handle:{f} }
@@ -36,7 +36,7 @@ try
   TFhree.Interpreter.eval code |> ignore
 with 
 | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-[%expect {| TFhree.Exceptions.Type_Error("Cannot have nested blocks.")|}]
+[%expect {| TFhree.Exceptions.Type_Error("Cannot have nested blocks. At: (4, 9)-(4, 56)")|}]
 
 let code = {|
   // plugin code cannot use external variables
@@ -57,7 +57,7 @@ let _ = TFhree.Type_system.type_check code in
 TFhree.Interpreter.eval code |> ignore
 with 
 | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-[%expect {| TFhree.Exceptions.Binding_Error("a not found")|}]
+[%expect {| TFhree.Exceptions.Binding_Error("a not found at: (7, 41)-(7, 42)")|}]
 
 let code = {|
   // plugin code must be evaluated in a function

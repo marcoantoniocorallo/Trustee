@@ -1,3 +1,0 @@
-let p = <"p"> in 
-(lambda (x : int) (f : int -> int) : int -> f x) 5 p // can now be passed as parameter
-// (lambda : (int->int) -> p )() 5 // and can be returned!

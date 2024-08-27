@@ -73,13 +73,15 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
     | "-", _ -> raise (Type_Error ("Not of non-number type - at Token: "^(string_of_loc (e.loc))))  
     | _, _ -> raise (Unsupported_Primitive(op))
     )
-  | Var(x)  -> 
-    let tx, c = lookup gamma x in 
-    (match tx with (* TODO: ha senso? *)
-    | TuntrustedBlock(_) when into_block = Trusted ->
-      raise(Security_Error("Type: Cannot access to plugin from inside trusted blocks."))
-    | _ -> tx, c
-    )
+  | Var(x)  ->
+    (try
+      let tx, c = lookup gamma x in 
+      (match tx with (* TODO: ha senso? *)
+      | TuntrustedBlock(_) when into_block = Trusted ->
+        raise(Security_Error("Cannot access to plugin from inside trusted blocks."))
+      | _ -> tx, c
+      )
+    with Binding_Error s -> raise(Binding_Error(s^" at: "^(string_of_loc e.loc))))
   | Bop(e1, "=", e2) 
   | Bop(e1, "<>", e2) -> 
     let t1, c1 = type_of ~into_block:into_block gamma cxt e1 in
@@ -242,7 +244,7 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
     raise ( Error_of_Inconsistence("type system: !!! Prohibit use of Native Functions !!! at: "^(string_of_loc e.loc)))
   | Trust(id, b) -> 
     if into_block = No then TtrustedBlock(type_of_trusted id b start_env []), cxt
-    else raise (Type_Error("Cannot have nested blocks."))
+    else raise (Type_Error("Cannot have nested blocks. At: "^(string_of_loc e.loc)))
   | Access(tb, field) -> 
     let tbtype, _ =  type_of ~into_block:into_block gamma cxt tb in 
     ( match tbtype, field.value with
@@ -270,7 +272,7 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
       | Tfun(_) -> TuntrustedBlock(v), join cxt c
       | _ -> raise(Type_Error("A plugin must implement a function. At: "^(string_of_loc e.loc)))
       )
-    else raise (Type_Error("Cannot have nested blocks."))
+    else raise (Type_Error("Cannot have nested blocks. At: "^(string_of_loc e.loc)))
   | Assert(p, taint_flag) -> 
     let t, c = type_of ~into_block:into_block gamma cxt p in
     if taint_flag then t, join c cxt (* just assert if the expression p is taint *)
@@ -328,12 +330,13 @@ and type_of_trusted (name : ide) (e : located_exp) (env : (ttype * confidentiali
   | Handle(l) -> (* for each item i, adds (i, (type_of i, Bottom)) to tb -> shadowing *)
     let add_f (f : located_exp) = 
       (match f.value with
-      | Var(name) -> 
-        (match List.assoc_opt name tb with  (* Check that the function has been defined in the block *)
-        | Some (Tfun(_) as t, _, conf) -> (name, (t, Public, conf))
-        | Some (_) -> raise(Type_Error("A Function was expected at: "^(string_of_loc f.loc)))
-        | _ -> raise(Type_Error("Handled Function must be declared into the block. At: "^(string_of_loc f.loc)))
-        )
+      | Var(name) ->
+        (try 
+          (match lookup tb name with  (* Check that the function has been defined in the block *)
+          | (Tfun(_) as t, _, conf) -> (name, (t, Public, conf))
+          | _ -> raise(Type_Error("A Function was expected at: "^(string_of_loc f.loc)))
+          )
+        with Binding_Error s -> raise(Binding_Error(s^" at: "^(string_of_loc f.loc))))
       | _ -> raise(Type_Error("An identifier was expected at: "^(string_of_loc f.loc)))
       ) in		
     (List.map (add_f) l)@tb

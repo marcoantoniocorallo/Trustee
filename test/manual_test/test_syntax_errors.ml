@@ -27,3 +27,13 @@ let plugin p = {
     let secret s = "s"  in
 } in p
 *)
+
+(*
+(* Syntax error (handle expected) *)
+let fun f (x : int) : int = x + 1 in 
+let trust pwd = {
+  let secret pass = "abcd" in
+
+  let fun checkpwd (guess : string) : bool = pass = guess in
+} in pwd
+*)

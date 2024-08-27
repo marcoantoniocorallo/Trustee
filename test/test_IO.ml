@@ -80,7 +80,7 @@ let%expect_test "test_IO9" =
     TFhree.Interpreter.eval code |> ignore
   with 
     | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Binding_Error("c not found") |}]
+  [%expect {| TFhree.Exceptions.Binding_Error("c not found at: (1, 13)-(1, 14)") |}]
 
 let%expect_test "test_IO10" =
   let code = {| let c = 'c' in print_char c |} in

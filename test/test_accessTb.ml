@@ -106,7 +106,7 @@ let%expect_test "external var use" =
     TFhree.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Binding_Error("a not found") |}]
+  [%expect {| TFhree.Exceptions.Binding_Error("a not found at: (6, 50)-(6, 51)") |}]
 
 (* FAILURE! pass is still secret even if has not keyword (i.e. is not handled) *)
 let code = 

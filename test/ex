@@ -1,0 +1,11 @@
+let fun checkpwd (s : string) : bool = s = "abcd" in 
+let plugin filter = {
+  let fun string_f (predicate : string -> bool) (l : string list) : string list = 
+    if l = [] then [] 
+    else 
+      if predicate (hd l) then (hd l)::(string_f predicate (tl l))
+      else (string_f predicate (tl l))
+  in string_f
+} in 
+let l = filter checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"] in 
+assert taint l
