@@ -173,6 +173,12 @@ Plugin   Secret_i  Secret_j
 - Nota: i plugin sono semplicemente dei wrapper per singole funzioni, e come tali possono
   essere passate o restituite. Non c'è una type annotation per i plugin perchè questi 
   vengono gestiti come funzioni.
+  I trusted block, invece, non possono essere passati nè restituiti (infatti, questi 
+  sono environment che contengono informazioni sulla confidenzialità e bisognerebbe
+  richiedere all'utente/programmatore di specificare correttamente il livello di conf. di
+  ogni funzione in fase di type annotation... un artificio complesso e inutile). Piuttosto,
+  dato che l'unico tipo di campi accessibili sono funzioni, è possibile passare una tupla 
+  di funzioni, come nell'esempio test_from_tb_to_tuple.ml
 
 - Non-Interference è rispettata:
   - se si tenta di accedere ad un field secret, o ad un field inesistente, viene restituita
