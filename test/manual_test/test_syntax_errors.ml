@@ -1,3 +1,4 @@
+(*
 (* handle list cannot be empty -> syntax error *)
 let trust pwd = {
   let pass = "abcd" in
@@ -5,7 +6,17 @@ let trust pwd = {
   let fun checkpwd (guess : string) : bool = guess = pass in
   handle: {}
 } in pwd
+*)
 
+(*
+(* handle list cannot be empty -> syntax error *)
+let plugin pwd = {
+  let pass = "abcd" in
+
+  let fun checkpwd (guess : string) : bool = guess = pass in
+  handle: {}
+} in pwd
+*)
 
 (*
 // Not Empty! -> syntax error
@@ -24,7 +35,7 @@ let plugin p = {
 (*
 // secret not allowed! -> syntax error
 let plugin p = {
-    let secret s = "s"  in
+    let secret s = "s"  in handle:{s}
 } in p
 *)
 
@@ -33,6 +44,15 @@ let plugin p = {
 let fun f (x : int) : int = x + 1 in 
 let trust pwd = {
   let secret pass = "abcd" in
+
+  let fun checkpwd (guess : string) : bool = pass = guess in
+} in pwd
+*)
+
+(*
+let fun f (x : int) : int = x + 1 in 
+let plugin pwd = {
+  let pass = "abcd" in
 
   let fun checkpwd (guess : string) : bool = pass = guess in
 } in pwd

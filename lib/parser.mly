@@ -163,7 +163,7 @@ let_expr:
 | TRUST name = ID "=" "{" e = trust_expr "}"
     { (name, None, Trust(name, e) |@| $loc ) }
 
-| PLUGIN name = ID "=" "{" e = expr "}"
+| PLUGIN name = ID "=" "{" e = trust_expr "}"
     { (name, None, PluginData(e) |@| $loc ) }
 
 (** simple_expr is a syntactical category used for disambiguing the grammar. *)

@@ -56,8 +56,7 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 		let f', t' = eval ~into_block:into_block eFun env t in 
 		let xVal, xTaint = eval ~into_block:into_block eArg env t in
 		(match f', t', xVal with
-		| Closure (f, x, fBody, fDeclEnv) as fClosure, f_t, _
-		| UntrustedBlock((Closure (f, x, fBody, fDeclEnv)) as fClosure, f_t), _, _ ->
+		| Closure (f, x, fBody, fDeclEnv) as fClosure, f_t, _ ->
 			let fBodyEnv = (x, (xVal, xTaint)) :: (f, (fClosure, f_t)) :: fDeclEnv in 
 			let f_res, t_res = eval ~into_block:into_block fBody fBodyEnv t in 
 			f_res, t_res ++ f_t ++ xTaint
@@ -135,9 +134,9 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 		raise (Error_of_Inconsistence("eval: unexpected handled exp outside trusted block: "^(string_of_loc e.loc) ))
 	| PluginData(e) ->
 		if into_block <> No then raise (Type_Error("Cannot have nested blocks."))
-		else
-			let v' = eval ~into_block:Untrusted e start_env Taint in 
-			UntrustedBlock(v'), t
+		else 
+			let v' = eval_untrusted e start_env [] Taint in 
+			TrustedBlock(v'), t
 	| Assert(p, taint_flag) -> 
 		let v', t' = eval ~into_block:into_block p env t in
 		if taint_flag then (* just assert if the expression p is taint *)
@@ -173,6 +172,30 @@ and eval_trusted	(e : located_exp) (env : (value * integrity) env)
 	| Handle(l) -> (* for each item i, adds (i, (eval i, Public)) to tb *)
 		let add_f (f : located_exp) = 
 			(match eval ~into_block:Trusted f env t with
+			| Closure(name,_,_,_) as c, t -> (name, (c,t))
+			| _ -> raise(Type_system_Failed("eval_trusted: not-function value in handle at: "^(string_of_loc e.loc)))
+			) in		
+		(List.map (add_f) l)@tb
+	| other ->	raise (Error_of_Inconsistence("eval_trusted: unexpected construct! "
+							^(Syntax.show_exp other)^" at: "^(string_of_loc e.loc) ))
+
+and eval_untrusted	(e : located_exp) (env : (value * integrity) env) 
+										(tb : (value * integrity) env) (t : integrity) 
+											: (value * integrity) env = 
+	match e.value with
+	| Let(x, _, eRhs, letBody) -> (* evaluates rhs, adds to env and tb and eval(_trusted) the body *)
+		let xVal = 
+			( match eRhs.value with
+			| SecretData(s) -> let v, _ = eval ~into_block:Untrusted s env t in v, t
+			| Trust(_) -> raise (Type_system_Failed("Cannot have nested blocks."))
+			| _ -> eval ~into_block:Trusted eRhs env t
+			) in 
+		let letEnv = (x, xVal) :: env in
+		let tb' = (x, xVal)::tb in 
+		eval_untrusted letBody letEnv tb' t
+	| Handle(l) -> 
+		let add_f (f : located_exp) = 
+			(match eval ~into_block:Untrusted f env t with
 			| Closure(name,_,_,_) as c, t -> (name, (c,t))
 			| _ -> raise(Type_system_Failed("eval_trusted: not-function value in handle at: "^(string_of_loc e.loc)))
 			) in		

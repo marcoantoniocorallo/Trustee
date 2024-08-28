@@ -80,7 +80,7 @@ let%expect_test "Parse tb 4" =
     TFhree.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Type_Error("Cannot have nested blocks. At: (4, 5)-(10, 20)") |}]
+  [%expect {| TFhree.Exceptions.Type_Error("Cannot have nested blocks. At: (4, 9)-(9, 6)") |}]
 ;;
 
 (* 
@@ -223,7 +223,7 @@ let code = {|
   (* plugin in a trust block is not recognized (nested block) *)
   let trust pwd = {
     let secret pass = "abcd" in 
-    let plugin p = { let s="s"  in s} in 
+    let plugin p = { let s="s"  in handle:{s}} in 
     let fun checkpwd (guess : string) : bool = pass = guess in 
     handle: {checkpwd}
   } in pwd.checkpwd
@@ -237,7 +237,7 @@ let%expect_test "Parse tb 11" =
     TFhree.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Type_Error("Cannot have nested blocks. At: (5, 22)-(5, 37)") |}]
+  [%expect {| TFhree.Exceptions.Type_Error("Cannot have nested blocks. At: (5, 22)-(5, 46)") |}]
 ;;
 
 let code = {|
@@ -247,7 +247,7 @@ let code = {|
     let pippo = "hello" in 
       let pluto = "world" in 
         let fun f (x : int) : int = x+1 in 
-          let plugin p = { let s="s" in s } in 
+          let plugin p = { let s="s" in handle: {s} } in 
     let xx = pippo^pluto in 
     let fun checkpwd (guess : string) : bool = pass = guess in 
     handle: {checkpwd}
@@ -262,5 +262,5 @@ let%expect_test "Parse tb 12" =
     TFhree.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Type_Error("Cannot have nested blocks. At: (8, 28)-(8, 42)") |}]
+  [%expect {| TFhree.Exceptions.Type_Error("Cannot have nested blocks. At: (8, 28)-(8, 52)") |}]
 ;;

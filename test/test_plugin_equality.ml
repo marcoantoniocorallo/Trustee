@@ -7,7 +7,7 @@ let code =
         else 
           if predicate (hd l) then (hd l)::(string_f predicate (tl l))
           else (string_f predicate (tl l))
-      in string_f
+      in handle: {string_f}
     } in 
     let plugin filter2 = {
       let fun int_f (predicate : int -> bool) (l : int list) : int list = 
@@ -15,7 +15,7 @@ let code =
         else 
           if predicate (hd l) then (hd l)::(int_f predicate (tl l))
           else (int_f predicate (tl l))
-      in int_f
+      in handle: {int_f}
     } in 
     filter1 = filter2
   |}
@@ -41,7 +41,7 @@ let code =
         else 
           if predicate (hd l) then (hd l)::(string_f predicate (tl l))
           else (string_f predicate (tl l))
-      in string_f
+      in handle: {string_f}
     } in 
     let plugin filter2 = {
       let fun string_f (predicate : string -> bool) (l : string list) : string list = 
@@ -49,7 +49,7 @@ let code =
         else 
           if predicate (hd l) then (hd l)::(string_f predicate (tl l))
           else (string_f predicate (tl l))
-      in string_f
+      in handle: {string_f}
     } in 
     filter1 = filter2
   |}
@@ -75,7 +75,7 @@ let code =
         else 
           if predicate (hd l) then (hd l)::(string_f predicate (tl l))
           else (string_f predicate (tl l))
-      in string_f
+      in handle: {string_f}
     } in 
     let plugin filter2 = {
       let fun string_f (predicate : string -> bool) (l : string list) : string list = 
@@ -83,7 +83,7 @@ let code =
         else 
           if predicate (hd l) then (hd l)::(string_f predicate (tl l))
           else (string_f predicate (tl l))
-      in string_f
+      in handle: {string_f}
     } in 
     filter1 = filter1
   |}

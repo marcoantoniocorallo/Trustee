@@ -15,9 +15,7 @@ let rec (<=) (t1 : ttype) (t2 : ttype) : bool = match t1, t2 with
 	| Tlist(Some t1'), Tlist(Some t2') when t1' <= t2' -> true
 	| Ttuple(l1), Ttuple(l2) when List.length l1 = List.length l2 -> List.for_all2 (<=) l1 l2
   | TtrustedBlock(e1), TtrustedBlock(e2) -> e1 == e2 (* pointer equality *)
-  | TuntrustedBlock(t1'), TuntrustedBlock(t2') (* wrap function types -> no comparable*)
-  | TuntrustedBlock(t1'), t2'
-  | t1', TuntrustedBlock(t2') -> t1' <= t2'
+  | TuntrustedBlock(t1'), TuntrustedBlock(t2') -> t1' == t2'
 	| _ -> false
 
 (** The starting type environment. *)
@@ -162,14 +160,9 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
     let t1, c1 = type_of ~into_block:into_block gamma cxt e1 in
     let t2, c2 = type_of ~into_block:into_block gamma cxt e2 in
     ( match t1 with
-    | Tfun(tx, tr) as tfun 
-    | TuntrustedBlock(Tfun(tx, tr) as tfun) ->
+    | Tfun(tx, tr) as tfun  ->
       if t2 <= tx then 
-        let tf, conf = 
-          ( match tr with
-          | TuntrustedBlock(tf) -> tf, join c1 c2
-          | _ -> tr, join c1 c2
-          )
+        let tf, conf = tr, join c1 c2
         in match conf with
         | Top       (* handled-functions must not leak data! *)
         | Secret _ -> raise(Security_Error("The program could contain a Data leakage."))
@@ -258,6 +251,11 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
       | Some (_, _, _) -> raise(Error_of_Inconsistence("Not-function public object in a trusted block! At: "^(string_of_loc e.loc)))
       | None -> raise (Type_Error("Field "^id^" not found or not public in block at: "^(string_of_loc tb.loc)))
       )
+    | TuntrustedBlock(env), Var(id) ->
+      ( match List.assoc_opt id env with
+      | Some (t, c) -> t, join cxt c
+      | None -> raise (Type_Error("Field "^id^" not found in plugin at: "^(string_of_loc tb.loc)))
+      )
     | _, Var(_) -> raise (Type_Error("A block was expected in access operation at: "^(string_of_loc tb.loc)))
     | _, _ -> raise (Type_Error("An identifier was expected in access operation at: "^(string_of_loc field.loc))) )
   | SecretData(_) -> (* Is not possible to have secret data outside trusted blocks - syntax constraint *)
@@ -267,12 +265,7 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
     raise (Error_of_Inconsistence("type_of: unexpected handled exp outside trusted block: "
     ^(string_of_loc e.loc) ))
   | PluginData(e) -> (* eval in an empty env *)
-    if into_block = No then 
-      let v, c = type_of ~into_block:Untrusted start_env cxt e in
-      (match v with
-      | Tfun(_) -> TuntrustedBlock(v), join cxt c
-      | _ -> raise(Type_Error("A plugin must implement a function. At: "^(string_of_loc e.loc)))
-      )
+    if into_block = No then TuntrustedBlock(type_of_untrusted e start_env []), cxt
     else raise (Type_Error("Cannot have nested blocks. At: "^(string_of_loc e.loc)))
   | Assert(p, taint_flag) -> 
     let t, c = type_of ~into_block:into_block gamma cxt p in
@@ -290,7 +283,6 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
       | other  -> 
         raise(Error_of_Inconsistence("Attempt to declassify non-secret data: "
         ^(Syntax.show_confidentiality other)^" at: "^(string_of_loc e.loc)))
-        (* t, cxt *)
     else raise(Type_Error("Declassification is only possible inside trusted blocks. At: "^(string_of_loc e.loc)))
 
 (** Type checker for expressions defined inside a trusted block.
@@ -318,9 +310,9 @@ and type_of_trusted (name : ide) (e : located_exp) (env : (ttype * confidentiali
         | Tlist(_) -> ts, cs
         | _ -> raise (Type_Error("Only data can be secret. At: "^(string_of_loc s.loc)))
         )
-      | Trust(_) -> raise (Type_Error("Cannot have nested blocks. At: "^(string_of_loc e.loc)))
+      | Trust(_) -> raise (Type_Error("Cannot have nested blocks. At: "^(string_of_loc e1.loc)))
       (* non-secret data are still private, but they are not followed in information flow analysis *)
-      | _ -> type_of ~into_block:Trusted env (Normal(name)) e1 
+      | _ -> type_of ~into_block:Trusted env (Normal(name)) e1
       ) in 
     (match t with 
     | Some tt -> 
@@ -342,6 +334,40 @@ and type_of_trusted (name : ide) (e : located_exp) (env : (ttype * confidentiali
       ) in		
     (List.map (add_f) l)@tb
   | other ->	raise (Error_of_Inconsistence("type_of_trusted: unexpected construct! "
+              ^(Syntax.show_exp other)^" at: "^(string_of_loc e.loc) ))
+
+and type_of_untrusted (e : located_exp) (env : (ttype * confidentiality) env) 
+                      (p_env : (ttype * confidentiality) env) 
+                    : (ttype * confidentiality) env = 
+  match e.value with
+  | Let(x, t, e1, e2) -> 
+    let t', c' = 
+      ( match e1.value with
+      | SecretData(_) -> raise (Type_Error("Secret kw not allowed here. At: "^(string_of_loc e1.loc)))
+      | Trust(_) 
+      | PluginData(_) -> raise (Type_Error("Cannot have nested blocks. At: "^(string_of_loc e1.loc)))
+      | _ ->type_of ~into_block:Untrusted env Plugin e1 
+      ) in 
+    (match t with 
+    | Some tt -> 
+      if t' = tt then type_of_untrusted e2 ((x,(t', c'))::env) ((x, (t', c'))::p_env)
+      else raise(Type_Error("Bad type annotation at "^(string_of_loc (e.loc))))
+    | None -> type_of_untrusted e2 ((x,(t', c'))::env) ((x, (t', c'))::p_env)
+    )
+  | Handle(l) ->
+    let add_f (f : located_exp) = 
+      (match f.value with
+      | Var(name) ->
+        (try 
+          (match lookup p_env name with  (* Check that the function has been defined in the block *)
+          | (Tfun(_) as t, conf) -> (name, (t, conf))
+          | _ -> raise(Type_Error("A Function was expected at: "^(string_of_loc f.loc)))
+          )
+        with Binding_Error s -> raise(Binding_Error(s^" at: "^(string_of_loc f.loc))))
+      | _ -> raise(Type_Error("An identifier was expected at: "^(string_of_loc f.loc)))
+      ) in		
+    (List.map (add_f) l)@p_env
+  | other ->	raise (Error_of_Inconsistence("type_of_untrusted: unexpected construct! "
               ^(Syntax.show_exp other)^" at: "^(string_of_loc e.loc) ))
 ;;
 

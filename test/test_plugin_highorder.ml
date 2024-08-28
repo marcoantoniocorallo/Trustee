@@ -3,9 +3,9 @@ let code = {|
   let plugin p = {
     let s = "s" in
     let fun f (x : int) : int = x+1
-    in f
+    in handle: {f}
   } in
-  (lambda (x : int) (f : int -> int) : int -> f x) 5 p // can now be passed as parameter
+  (lambda (x : int) (f : int -> int) : int -> f x) 5 p.f // can now be passed as parameter
 |};;
 
 let%expect_test "Plugin high order 1" =
@@ -24,9 +24,9 @@ let code = {|
   let plugin p = {
     let s = "s" in
     let fun f (x : int) : int = x+1
-    in f
+    in handle: {f}
   } in
-  (lambda : (int->int) -> p )() 5 // and can be returned!
+  (lambda : (int->int) -> p.f )() 5 // and can be returned!
 |};;
 
 let%expect_test "Plugin high order 2" =

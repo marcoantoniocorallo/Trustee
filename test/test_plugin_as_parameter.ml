@@ -4,7 +4,7 @@ let code = {|
   let plugin succ = {
     let s = "s" in
     let fun f (x : int) : int = x+1
-    in f
+    in handle: {f}
   } in
   let trust pwd = {
     let secret pass = "abcd" in 
@@ -15,7 +15,7 @@ let code = {|
       foo 7 in 
     handle: {checkpwd; take_arg}
   } in 
-  pwd.take_arg succ // data leak (prevented)
+  pwd.take_arg succ.f // data leak (prevented)
 |};;
 
 let%expect_test "Plugin as param 1" =
@@ -35,7 +35,7 @@ let code = {|
   let plugin succ = {
     let s = "s" in
     let fun f (x : int) : int = x+1
-    in f
+    in handle: {f}
   } in
   let trust pwd = {
     let secret pass = "abcd" in 
@@ -64,7 +64,7 @@ let code = {|
       else 
         if predicate (hd l) then (hd l)::(string_f predicate (tl l))
         else (string_f predicate (tl l))
-    in string_f
+    in handle: {string_f}
   } in 
   let trust pwd = {
     let secret pass = "abcd" in 
@@ -77,7 +77,7 @@ let code = {|
     in 
     handle: {checkpwd; take_arg}
   } in 
-  pwd.take_arg filter // not allowed -> data leak (prevented)!
+  pwd.take_arg filter.string_f // not allowed -> data leak (prevented)!
 |};;
 
 let%expect_test "Plugin as param 3" =
@@ -98,7 +98,7 @@ let code = {|
       else 
         if predicate (hd l) then (hd l)::(string_f predicate (tl l))
         else (string_f predicate (tl l))
-    in string_f
+    in handle: {string_f}
   } in 
   let trust pwd = {
     let secret pass = "abcd" in 
@@ -135,7 +135,7 @@ let code = {|
   let plugin succ = {
     let s = "s" in
     let fun f (x : int) : int = x+1
-    in f
+    in handle: {f}
   } in
   let trust pwd = {
     let secret pass = "abcd" in 
@@ -148,7 +148,7 @@ let code = {|
     in 
     handle: {checkpwd; take_arg}
   } in 
-  pwd.take_arg (lambda : (int->int) -> succ )
+  pwd.take_arg (lambda : (int->int) -> succ.f )
   //pwd.take_arg (lambda : (int->int) -> lambda (x:int) : int -> x+1 )
 |};;
 
@@ -168,7 +168,7 @@ let code = {|
   let plugin succ = {
     let s = "s" in
     let fun f (x : int) : int = x+1
-    in f
+    in handle: {f}
   } in
   let trust pwd = {
     let secret pass = "abcd" in 
@@ -199,7 +199,7 @@ let code = {|
       else 
         if predicate (hd l) then (hd l)::(string_f predicate (tl l))
         else (string_f predicate (tl l))
-    in string_f
+    in handle: {string_f}
   } in 
   let trust pwd = {
     let secret pass = "abcd" in 
@@ -221,7 +221,7 @@ let code = {|
       else (string_f predicate (tl l))
 
   // not allowed -> data leak (prevented)!
-  in pwd.take_arg (lambda : ((string -> bool) -> (string list) -> string list) -> filter )
+  in pwd.take_arg (lambda : ((string -> bool) -> (string list) -> string list) -> filter.string_f )
 |};;
 
 let%expect_test "Plugin as param 7" =
@@ -243,7 +243,7 @@ let code = {|
       else 
         if predicate (hd l) then (hd l)::(string_f predicate (tl l))
         else (string_f predicate (tl l))
-    in string_f
+    in handle: {string_f}
   } in 
   let trust pwd = {
     let secret pass = "abcd" in 

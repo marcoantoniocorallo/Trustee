@@ -19,9 +19,9 @@ let code =
       else 
         if predicate (hd l) then (hd l)::(string_f predicate (tl l))
         else (string_f predicate (tl l))
-    in string_f
+    in handle: {string_f}
   } in 
-  filter pwd.checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"]
+  filter.string_f pwd.checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"]
 |}
 ;;
 
@@ -52,9 +52,9 @@ let code =
       else 
         if predicate (hd l) then (hd l)::(string_f predicate (tl l))
         else (string_f predicate (tl l))
-    in string_f
+    in handle: {string_f}
   } in 
-  if (let _ = (filter (pwd.checkpwd) ["pippo", "abc", "abcd", "pluto", "paperino"]) in true) 
+  if (let _ = (filter.string_f (pwd.checkpwd) ["pippo", "abc", "abcd", "pluto", "paperino"]) in true) 
     then print_string "hello" 
   else print_string "hi"
   |}
@@ -87,9 +87,9 @@ let code =
         else 
           if predicate (hd l) then (hd l)::(string_f predicate (tl l))
           else (string_f predicate (tl l))
-      in string_f
+      in handle: {string_f}
     } in 
-    let l = filter pwd.checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"] in 
+    let l = filter.string_f pwd.checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"] in 
     let fun print_list (ls : string list) : unit = 
       if ls <> [] then 
         let _ = print_string (hd ls) in 

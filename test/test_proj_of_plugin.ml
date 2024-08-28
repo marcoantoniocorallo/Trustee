@@ -3,9 +3,9 @@ open TFhree.Syntax;;
 let code = 
   {|
   let plugin p = {
-    let fun f (x:int) : int = x+1 in f
+    let fun f (x:int) : int = x+1 in handle: {f}
   } in 
-  (proj (1, "2", p) 2) 5
+  (proj (1, "2", p.f) 2) 5
   |}
 ;;
 

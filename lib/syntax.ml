@@ -70,7 +70,7 @@ and ttype =
   | Tlist of ttype option                           (*  Compound type: list *)
 	(* Block of data and code are associated to type environments *)
 	|	TtrustedBlock of ((ttype * qualifier * confidentiality)	env	[@opaque])
-	| TuntrustedBlock of ttype
+	| TuntrustedBlock of (ttype * confidentiality) env
 	[@@deriving show]
 
 (** Expressible and denotable values. *)
@@ -87,7 +87,7 @@ and value =
 	| ListV of value list   																(*	Homogeneous list of values *)
 	(* Block of data and code are associated to value environments *)
 	| TrustedBlock of ((value * integrity) env	[@opaque])
-	| UntrustedBlock of (value * integrity)
+	| UntrustedBlock of (value * integrity) env
 	[@@deriving show]
 
 and qualifier = 

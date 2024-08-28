@@ -10,4 +10,4 @@ let trust pwd = {
   handle: {checkpwd}
 } in
 let filter = <"filter"> in
-filter pwd.checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"]
+filter.string_f pwd.checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"]

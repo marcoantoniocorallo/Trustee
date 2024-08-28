@@ -113,9 +113,9 @@ let code = {|
       else 
         if predicate (hd l) then (hd l)::(string_f predicate (tl l))
         else (string_f predicate (tl l))
-    in string_f
+    in handle: {string_f}
   } in 
-  let l = filter checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"] in 
+  let l = filter.string_f checkpwd ["pippo", "abc", "abcd", "pluto", "paperino"] in 
   assert taint l
 |};;
 
