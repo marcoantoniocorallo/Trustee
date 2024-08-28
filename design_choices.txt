@@ -153,7 +153,7 @@ Plugin   Secret_i  Secret_j
   deve dare Top (=> data leak) perchè i blocchi che usano declassify(.) all'interno 
   hanno confidenzialità "Normal _". Permettere questo tipo di interazioni è pericoloso
 
-- I trusted block sono ora comparabili e viene eseguita una pointer equality.
+- Trusted block e plugin sono ora comparabili e viene eseguita una pointer equality.
  In questo modo non vi può essere leak di dati privati se un tb viene comparato a tb diversi.
  
 - Nota: Solo i dati possono essere secret e solo le funzioni possono essere handled

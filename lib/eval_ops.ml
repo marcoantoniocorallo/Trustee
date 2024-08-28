@@ -23,6 +23,7 @@ let rec eval_bop v1 op v2 =
   | ("=", ListV(l1), ListV(l2)) ->  Bool (l1 = l2)
   | ("=", Tuple(l1), Tuple(l2)) -> Bool (l1 = l2)
   | ("=", TrustedBlock(e1), TrustedBlock(e2)) -> Bool(e1==e2)
+  | ("=", UntrustedBlock(e1), UntrustedBlock(e2)) -> Bool(e1==e2)
   | ("<", Int i1, Int i2) -> Bool (if i1 < i2 then true else false)
   | ("<", Float i1, Float i2) -> Bool (if i1 < i2 then true else false)
   | ("<", Char i1, Char i2) -> Bool (if i1 < i2 then true else false)

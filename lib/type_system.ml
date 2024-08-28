@@ -89,7 +89,8 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
     ( match t1, t2 with
     | Tlist(_), Tlist(_)
     | Ttuple(_), Ttuple(_) 
-    | TtrustedBlock _, TtrustedBlock _->  Tbool, (join c1 c2)
+    | TtrustedBlock _, TtrustedBlock _
+    | TuntrustedBlock _, TuntrustedBlock _->  Tbool, (join c1 c2)
     | Tfun(_,_), Tfun(_,_) ->   raise (Type_Error ("Equality of functional values"
                                 ^(string_of_loc (e.loc))))
     | t1', t2' when t1' <= t2' -> Tbool, (join c1 c2)
