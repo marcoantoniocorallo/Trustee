@@ -15,13 +15,13 @@ let code =
 
 let%expect_test "Data leak value returned" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
   try 
-    let _ = TFhree.Type_system.type_check code in 
-    TFhree.Interpreter.eval code |> ignore
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
+  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
 
 let code =
   {|
@@ -41,13 +41,13 @@ let code =
 
 let%expect_test "Data leak value printed" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
   try 
-    let _ = TFhree.Type_system.type_check code in 
-    TFhree.Interpreter.eval code |> ignore
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
+  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
 
 let code =
   {|
@@ -64,13 +64,13 @@ let code =
 
 let%expect_test "False positive" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
   try 
-    let _ = TFhree.Type_system.type_check code in 
-    TFhree.Interpreter.eval code |> ignore
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
+  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
 
 let code = 
   {|
@@ -83,14 +83,14 @@ let code =
     } in pwd.checkpwd "abcd"
   |}
 
-let value = TFhree.Syntax.Bool(true)
+let value = Trustee.Syntax.Bool(true)
 
 let%test "declassified" =
-  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
+  let (@@) v1 v2 = Trustee.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  let vval = TFhree.Interpreter.eval code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  let vval = Trustee.Interpreter.eval code in 
   vval @@ value
 
 let code =
@@ -112,9 +112,9 @@ let code =
 
 let%expect_test "don't touch secret data" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  TFhree.Interpreter.eval code |> ignore;
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  Trustee.Interpreter.eval code |> ignore;
   [%expect {| abcd |}]
 
 
@@ -129,10 +129,10 @@ let code = {|
 
 let%expect_test "declassify outside of trusted blocks" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
   try 
-    let _ = TFhree.Type_system.type_check code in 
-    TFhree.Interpreter.eval code |> ignore
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Type_Error("Declassification is only possible inside trusted blocks. At: (5, 18)-(5, 30)") |}]
+  [%expect {| Trustee.Exceptions.Type_Error("Declassification is only possible inside trusted blocks. At: (5, 18)-(5, 30)") |}]

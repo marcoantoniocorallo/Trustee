@@ -1,6 +1,6 @@
 (lang dune 3.15)
 
-(name TFhree)
+(name Trustee)
 
 (generate_opam_files true)
 
@@ -18,7 +18,7 @@
 (license GPL-3.0-or-later)
 
 (package
- (name TFhree)
+ (name Trustee)
  (depends ocaml dune)
 )
 

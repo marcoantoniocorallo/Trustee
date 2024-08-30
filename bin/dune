@@ -1,4 +1,4 @@
 (executable
- (public_name TFhree)
+ (public_name Trustee)
  (name main)
- (libraries TFhree))
+ (libraries Trustee))

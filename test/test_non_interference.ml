@@ -13,13 +13,13 @@ let code = {|
 
 let%expect_test "NI - 1" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
   try 
-    let _ = TFhree.Type_system.type_check code in 
-    TFhree.Interpreter.eval code |> ignore
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
+  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
 ;;
 
 let code = {|
@@ -39,9 +39,9 @@ let code = {|
 
 let%expect_test "NI - 2" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  TFhree.Interpreter.eval code |> ignore;
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  Trustee.Interpreter.eval code |> ignore;
   [%expect {| hello |}]
 
   let code = {|
@@ -55,13 +55,13 @@ let%expect_test "NI - 2" =
 
 let%expect_test "NI - 3" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
   try 
-    let _ = TFhree.Type_system.type_check code in 
-    TFhree.Interpreter.eval code |> ignore
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
+  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
 ;;
 
 let code = {|
@@ -77,7 +77,7 @@ let code = {|
 
 let%test "NI - 4" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  TFhree.Interpreter.eval code |> 
-  TFhree.Utils.test_cmp_values (Int(5))
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  Trustee.Interpreter.eval code |> 
+  Trustee.Utils.test_cmp_values (Int(5))

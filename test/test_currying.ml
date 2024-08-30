@@ -1,15 +1,15 @@
-open TFhree.Syntax;;
+open Trustee.Syntax;;
 
 let code = "let fun sum (a : int) (b : int) : int = a+b in sum 5 6";;
 
 let value = Int(11);;
 
 let%test "currying_1" =
-  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
+  let (@@) v1 v2 = Trustee.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  let vval = TFhree.Interpreter.eval code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  let vval = Trustee.Interpreter.eval code in 
   vval @@ value
 
 let code = "(lambda (x : int) : int -> x+x) 5";;
@@ -17,11 +17,11 @@ let code = "(lambda (x : int) : int -> x+x) 5";;
 let value = Int(10);;
 
 let%test "currying_2" =
-  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
+  let (@@) v1 v2 = Trustee.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  let vval = TFhree.Interpreter.eval code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  let vval = Trustee.Interpreter.eval code in 
   vval @@ value
 
 let code = "(lambda (x : int) (y : int) : int -> x+y) 2 3";;
@@ -29,11 +29,11 @@ let code = "(lambda (x : int) (y : int) : int -> x+y) 2 3";;
 let value = Int(5);;
 
 let%test "currying_3" =
-  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
+  let (@@) v1 v2 = Trustee.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  let vval = TFhree.Interpreter.eval code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  let vval = Trustee.Interpreter.eval code in 
   vval @@ value
 
 let code = 
@@ -46,11 +46,11 @@ let code =
 let value = Tuple([ Int(16); String("this string! - this string!")] );;
 
 let%test "currying_4" =
-  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
+  let (@@) v1 v2 = Trustee.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  let vval = TFhree.Interpreter.eval code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  let vval = Trustee.Interpreter.eval code in 
   vval @@ value
 
   let code = 
@@ -61,11 +61,11 @@ let%test "currying_4" =
 let value = Int(24);;
 
 let%test "currying_5" =
-  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
+  let (@@) v1 v2 = Trustee.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  let vval = TFhree.Interpreter.eval code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  let vval = Trustee.Interpreter.eval code in 
   vval @@ value
 
     let code = 
@@ -76,11 +76,11 @@ let%test "currying_5" =
 let value = Int(24);;
 
 let%test "currying_5" =
-  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
+  let (@@) v1 v2 = Trustee.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  let vval = TFhree.Interpreter.eval code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  let vval = Trustee.Interpreter.eval code in 
   vval @@ value
 
 let code = 
@@ -101,11 +101,11 @@ let code =
 let value = Int(16);;
 
 let%test "currying_6" =
-  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
+  let (@@) v1 v2 = Trustee.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  let vval = TFhree.Interpreter.eval code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  let vval = Trustee.Interpreter.eval code in 
   vval @@ value
 
 let code = 
@@ -117,11 +117,11 @@ let code =
 let value = Int(16);;
 
 let%test "currying_7" =
-  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
+  let (@@) v1 v2 = Trustee.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  let vval = TFhree.Interpreter.eval code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  let vval = Trustee.Interpreter.eval code in 
   vval @@ value
 
 let code = 
@@ -132,9 +132,9 @@ let code =
 let value = Int(10);;
 
 let%test "currying_8" =
-  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
+  let (@@) v1 v2 = Trustee.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  let vval = TFhree.Interpreter.eval code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  let vval = Trustee.Interpreter.eval code in 
   vval @@ value

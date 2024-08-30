@@ -1,7 +1,7 @@
-TFhree.opam
+Trustee.opam
 _build/
 .vscode/
-TFhree
+Trustee
 todo
 design_choices.txt
 plugin/

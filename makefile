@@ -6,8 +6,8 @@ build:
 	dune build
 	mkdir -p plugin
 	cp -fr test/plugin/* ./plugin
-	cp -f _build/default/bin/main.exe ./TFhree
-	echo "Complete. The interpreter is: TFhree"
+	cp -f _build/default/bin/main.exe ./Trustee
+	echo "Complete. The interpreter is: Trustee"
 
 install: build
 	mkdir -p _install
@@ -28,7 +28,7 @@ clear: clean
 clean:
 	rm -fr _build
 	rm -fr _install
-	rm -f ./TFhree
+	rm -f ./Trustee
 	rm -fr plugin
 	echo "Complete."
 

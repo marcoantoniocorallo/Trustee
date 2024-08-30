@@ -20,13 +20,13 @@ let code = {|
 
 let%expect_test "Plugin as param 1" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
   try 
-    let _ = TFhree.Type_system.type_check code in 
-    TFhree.Interpreter.eval code |> ignore
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
+  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
 ;;
 
 let code = {|
@@ -51,9 +51,9 @@ let code = {|
 
 let%test "Plugin as param 2" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  TFhree.Utils.test_cmp_values (TFhree.Interpreter.eval code) (Int(8))
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  Trustee.Utils.test_cmp_values (Trustee.Interpreter.eval code) (Int(8))
 ;;
 
 let code = {|
@@ -82,13 +82,13 @@ let code = {|
 
 let%expect_test "Plugin as param 3" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
   try 
-    let _ = TFhree.Type_system.type_check code in 
-    TFhree.Interpreter.eval code |> ignore
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
+  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
 ;;
 
 let code = {|
@@ -123,9 +123,9 @@ let code = {|
 
 let%test "Plugin as param 4" =
 let lexbuf = Lexing.from_string code in 
-let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-let _ = TFhree.Type_system.type_check code in 
-TFhree.Utils.test_cmp_values (TFhree.Interpreter.eval code) (ListV([String("abcd")]))
+let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+let _ = Trustee.Type_system.type_check code in 
+Trustee.Utils.test_cmp_values (Trustee.Interpreter.eval code) (ListV([String("abcd")]))
 ;;
 
 let code = {|
@@ -154,13 +154,13 @@ let code = {|
 
 let%expect_test "Plugin as param 5" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
   try 
-    let _ = TFhree.Type_system.type_check code in 
-    TFhree.Interpreter.eval code |> ignore
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
+  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
 ;;
 
 let code = {|
@@ -186,9 +186,9 @@ let code = {|
 
 let%test "Plugin as param 6" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  TFhree.Utils.test_cmp_values (TFhree.Interpreter.eval code) (Int(8))
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  Trustee.Utils.test_cmp_values (Trustee.Interpreter.eval code) (Int(8))
 ;;
 
 let code = {|
@@ -226,13 +226,13 @@ let code = {|
 
 let%expect_test "Plugin as param 7" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
   try 
-    let _ = TFhree.Type_system.type_check code in 
-    TFhree.Interpreter.eval code |> ignore
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
+  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
 ;;
 
 let code = {|
@@ -268,7 +268,7 @@ let code = {|
 
 let%test "Plugin as param 8" =
 let lexbuf = Lexing.from_string code in 
-let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-let _ = TFhree.Type_system.type_check code in 
-TFhree.Utils.test_cmp_values (TFhree.Interpreter.eval code) (ListV([String("abcd")]))
+let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+let _ = Trustee.Type_system.type_check code in 
+Trustee.Utils.test_cmp_values (Trustee.Interpreter.eval code) (ListV([String("abcd")]))
 ;;

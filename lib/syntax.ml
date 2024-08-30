@@ -69,8 +69,8 @@ and ttype =
   | Ttuple of ttype list                        		(*  Compound type: tuple *)
   | Tlist of ttype option                           (*  Compound type: list *)
 	(* Block of data and code are associated to type environments *)
-	|	TtrustedBlock of ((ttype * qualifier * confidentiality)	env	[@opaque])
-	| TuntrustedBlock of (ttype * confidentiality) env
+	|	TtrustedBlock of		((ttype * qualifier * confidentiality)	env	[@opaque])
+	| TuntrustedBlock of	((ttype * qualifier * confidentiality)	env	[@opaque])
 	[@@deriving show]
 
 (** Expressible and denotable values. *)
@@ -109,7 +109,7 @@ and integrity =
 	[@@deriving show]
 
 (* Auxiliary type to keep trace of where the control flow is *)
-and block = No | Trusted | Untrusted
+and block_type = No | Trusted | Untrusted
 	[@@deriving show]
 ;;
 

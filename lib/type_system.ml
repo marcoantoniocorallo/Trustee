@@ -74,7 +74,7 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
   | Var(x)  ->
     (try
       let tx, c = lookup gamma x in 
-      (match tx with (* TODO: ha senso? *)
+      (match tx with 
       | TuntrustedBlock(_) when into_block = Trusted ->
         raise(Security_Error("Cannot access to plugin from inside trusted blocks."))
       | _ -> tx, c
@@ -237,24 +237,23 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
   | NativeFunction(_) ->
     raise ( Error_of_Inconsistence("type system: !!! Prohibit use of Native Functions !!! at: "^(string_of_loc e.loc)))
   | Trust(id, b) -> 
-    if into_block = No then TtrustedBlock(type_of_trusted id b start_env []), cxt
+    (*if into_block = No then TtrustedBlock(type_of_trusted id b start_env []), cxt*)
+    if into_block = No then TtrustedBlock(type_of_block Trusted (Some(id)) b start_env []), cxt
+    else raise (Type_Error("Cannot have nested blocks. At: "^(string_of_loc e.loc)))
+  | PluginData(e) -> 
+    (*if into_block = No then TuntrustedBlock(type_of_untrusted e start_env []), cxt*)
+    if into_block = No then TuntrustedBlock(type_of_block Untrusted None e start_env []), cxt
     else raise (Type_Error("Cannot have nested blocks. At: "^(string_of_loc e.loc)))
   | Access(tb, field) -> 
     let tbtype, _ =  type_of ~into_block:into_block gamma cxt tb in 
     ( match tbtype, field.value with
-    | TtrustedBlock(env), Var(id) -> (* Only public functions can be accessed in trusted blocks *)
-      ( match List.assoc_opt id env with
-      (* non-handled functions -> they doesn't exist for the user *)
-      | Some (_, Private, _) -> raise (Type_Error("Field "^id^" not found or not public in block at: "^(string_of_loc tb.loc)))
-      (* handled functions or functions that work with secret data *)
-      | Some (Tfun(_) as t, Public, c) -> t, join cxt c
-      | Some (_, _, _) -> raise(Error_of_Inconsistence("Not-function public object in a trusted block! At: "^(string_of_loc e.loc)))
-      | None -> raise (Type_Error("Field "^id^" not found or not public in block at: "^(string_of_loc tb.loc)))
-      )
+    | TtrustedBlock(env),   Var(id)    (* Only public functions can be accessed in blocks *)
     | TuntrustedBlock(env), Var(id) ->
       ( match List.assoc_opt id env with
-      | Some (t, c) -> t, join cxt c
-      | None -> raise (Type_Error("Field "^id^" not found in plugin at: "^(string_of_loc tb.loc)))
+      | Some (_, Private, _) -> raise (Type_Error("Field "^id^" not found or not public in block at: "^(string_of_loc tb.loc)))
+      | Some (Tfun(_) as t, Public, c) -> t, join cxt c
+      | Some (_, _, _) -> raise(Error_of_Inconsistence("Not-function public object in a block! At: "^(string_of_loc e.loc)))
+      | None -> raise (Type_Error("Field "^id^" not found or not public in block at: "^(string_of_loc tb.loc)))
       )
     | _, Var(_) -> raise (Type_Error("A block was expected in access operation at: "^(string_of_loc tb.loc)))
     | _, _ -> raise (Type_Error("An identifier was expected in access operation at: "^(string_of_loc field.loc))) )
@@ -264,9 +263,6 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
   | Handle(_) -> (* Is not possible to have handled exp outside trusted blocks - syntax constraint *)
     raise (Error_of_Inconsistence("type_of: unexpected handled exp outside trusted block: "
     ^(string_of_loc e.loc) ))
-  | PluginData(e) -> (* eval in an empty env *)
-    if into_block = No then TuntrustedBlock(type_of_untrusted e start_env []), cxt
-    else raise (Type_Error("Cannot have nested blocks. At: "^(string_of_loc e.loc)))
   | Assert(p, taint_flag) -> 
     let t, c = type_of ~into_block:into_block gamma cxt p in
     if taint_flag then t, join c cxt (* just assert if the expression p is taint *)
@@ -286,88 +282,68 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
     else raise(Type_Error("Declassification is only possible inside trusted blocks. At: "^(string_of_loc e.loc)))
 
 (** Type checker for expressions defined inside a trusted block.
- *  @params:  name: the name of the trusted block. Secret vars in block t have conf Secret(t)
+ *  @params:  b_type: type of block: Trusted or Untrusted (plugin)
+ *            name: the name of the trusted block. Secret vars in block t have conf Secret(t)
  *            e : expression to type-check
  *            env: global type environment
- *            tb: environment of the trusted block, that this function returns
+ *            b: environment of the block, the returned one
  *)
-and type_of_trusted (name : ide) (e : located_exp) (env : (ttype * confidentiality) env) 
-                    (tb : (ttype * qualifier * confidentiality) env) 
-                    : (ttype * qualifier * confidentiality) env = 
+
+and type_of_block (b_type : block_type) (name : ide option) (e : located_exp)
+                  (env : (ttype * confidentiality) env)  
+                  (b : (ttype * qualifier * confidentiality) env) 
+                  : (ttype * qualifier * confidentiality) env = 
+  (* checks of consistence *)
+  if b_type = No then raise(Error_of_Inconsistence("type_of_block with block_type = No ! At: "^(string_of_loc e.loc)))
+  else if b_type = Trusted && name = None then raise(Error_of_Inconsistence("Trusted block without name at: "^(string_of_loc e.loc)));
+  
   match e.value with
   | Let(x, t, e1, e2) -> (* checks rhs type, adds to env and tb and checks the body type *)
-    let t', c' = 
-      ( match e1.value with
-      | SecretData(s) -> 
-        let ts, cs = type_of ~into_block:Trusted env (Secret(name)) s in
-        (match ts with  
-        | Tint
-        | Tbool
-        | Tfloat
-        | Tchar
-        | Tstring
-        | Ttuple(_)
-        | Tlist(_) -> ts, cs
-        | _ -> raise (Type_Error("Only data can be secret. At: "^(string_of_loc s.loc)))
+    let t', c' =
+      if b_type = Trusted then (* Trusted Block *) 
+        ( match e1.value with
+        | SecretData(s) -> 
+          let ts, cs = type_of ~into_block:Trusted env (Secret(Option.get name)) s in
+          (match ts with  
+          | Tint
+          | Tbool
+          | Tfloat
+          | Tchar
+          | Tstring
+          | Ttuple(_)
+          | Tlist(_) -> ts, cs
+          | _ -> raise (Type_Error("Only data can be secret. At: "^(string_of_loc s.loc)))
+          )
+        | Trust(_) -> raise (Type_Error("Cannot have nested blocks. At: "^(string_of_loc e1.loc)))
+        | _ -> type_of ~into_block:Trusted env (Normal(Option.get name)) e1
         )
-      | Trust(_) -> raise (Type_Error("Cannot have nested blocks. At: "^(string_of_loc e1.loc)))
-      (* non-secret data are still private, but they are not followed in information flow analysis *)
-      | _ -> type_of ~into_block:Trusted env (Normal(name)) e1
-      ) in 
-    (match t with 
-    | Some tt -> 
-      if t' = tt then type_of_trusted name e2 ((x,(t', c'))::env) ((x, (t', Private, c'))::tb)
-      else raise(Type_Error("Bad type annotation at "^(string_of_loc (e.loc))))
-    | None -> type_of_trusted name e2 ((x,(t', c'))::env) ((x, (t', Private, c'))::tb)
-    )
-  | Handle(l) -> (* for each item i, adds (i, (type_of i, Bottom)) to tb -> shadowing *)
+      else (* Plugin *)
+        ( match e1.value with
+        | SecretData(_) -> raise (Type_Error("Secret kw not allowed here. At: "^(string_of_loc e1.loc)))
+        | Trust(_) 
+        | PluginData(_) -> raise (Type_Error("Cannot have nested blocks. At: "^(string_of_loc e1.loc)))
+        | _ -> type_of ~into_block:Untrusted env Plugin e1 
+        ) in 
+      (match t with 
+      | Some tt -> 
+        if t' = tt then type_of_block b_type name e2 ((x,(t', c'))::env) ((x, (t', Private, c'))::b)
+        else raise(Type_Error("Bad type annotation at "^(string_of_loc (e.loc))))
+      | None -> type_of_block b_type name e2 ((x,(t', c'))::env) ((x, (t', Private, c'))::b)
+      )
+  | Handle(l) -> (* for each item i, adds (i, (type_of i, Bottom/Plugin)) to tb -> shadowing *)
     let add_f (f : located_exp) = 
       (match f.value with
       | Var(name) ->
         (try 
-          (match lookup tb name with  (* Check that the function has been defined in the block *)
+          (match lookup b name with  (* Check that the function has been defined in the block *)
           | (Tfun(_) as t, _, conf) -> (name, (t, Public, conf))
           | _ -> raise(Type_Error("A Function was expected at: "^(string_of_loc f.loc)))
           )
         with Binding_Error s -> raise(Binding_Error(s^" at: "^(string_of_loc f.loc))))
       | _ -> raise(Type_Error("An identifier was expected at: "^(string_of_loc f.loc)))
       ) in		
-    (List.map (add_f) l)@tb
-  | other ->	raise (Error_of_Inconsistence("type_of_trusted: unexpected construct! "
-              ^(Syntax.show_exp other)^" at: "^(string_of_loc e.loc) ))
-
-and type_of_untrusted (e : located_exp) (env : (ttype * confidentiality) env) 
-                      (p_env : (ttype * confidentiality) env) 
-                    : (ttype * confidentiality) env = 
-  match e.value with
-  | Let(x, t, e1, e2) -> 
-    let t', c' = 
-      ( match e1.value with
-      | SecretData(_) -> raise (Type_Error("Secret kw not allowed here. At: "^(string_of_loc e1.loc)))
-      | Trust(_) 
-      | PluginData(_) -> raise (Type_Error("Cannot have nested blocks. At: "^(string_of_loc e1.loc)))
-      | _ ->type_of ~into_block:Untrusted env Plugin e1 
-      ) in 
-    (match t with 
-    | Some tt -> 
-      if t' = tt then type_of_untrusted e2 ((x,(t', c'))::env) ((x, (t', c'))::p_env)
-      else raise(Type_Error("Bad type annotation at "^(string_of_loc (e.loc))))
-    | None -> type_of_untrusted e2 ((x,(t', c'))::env) ((x, (t', c'))::p_env)
-    )
-  | Handle(l) ->
-    let add_f (f : located_exp) = 
-      (match f.value with
-      | Var(name) ->
-        (try 
-          (match lookup p_env name with  (* Check that the function has been defined in the block *)
-          | (Tfun(_) as t, conf) -> (name, (t, conf))
-          | _ -> raise(Type_Error("A Function was expected at: "^(string_of_loc f.loc)))
-          )
-        with Binding_Error s -> raise(Binding_Error(s^" at: "^(string_of_loc f.loc))))
-      | _ -> raise(Type_Error("An identifier was expected at: "^(string_of_loc f.loc)))
-      ) in		
-    (List.map (add_f) l)@p_env
-  | other ->	raise (Error_of_Inconsistence("type_of_untrusted: unexpected construct! "
+    (List.map (add_f) l)@b
+  | other ->	raise (Error_of_Inconsistence("type_of_block: unexpected construct! "
               ^(Syntax.show_exp other)^" at: "^(string_of_loc e.loc) ))
 ;;
 

@@ -22,10 +22,10 @@ let code = {|
 
 let%expect_test "blocks shadowing" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
   try 
-    let _ = TFhree.Type_system.type_check code in 
-    TFhree.Interpreter.eval code |> ignore
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Type_Error("Field checkpwd not found or not public in block at: (19, 5)-(19, 8)") |}]
+  [%expect {| Trustee.Exceptions.Type_Error("Field checkpwd not found or not public in block at: (19, 5)-(19, 8)") |}]

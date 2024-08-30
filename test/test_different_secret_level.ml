@@ -30,9 +30,9 @@ let code =
 
 let%expect_test "Two different secret levels" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  TFhree.Interpreter.eval code |> ignore;
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  Trustee.Interpreter.eval code |> ignore;
   [%expect {| Two different secret levels in the same program but it works as it should do |}]
 
 (* same scenario, but the value filtered is returned *)
@@ -63,14 +63,14 @@ let code =
   |}
 ;;
   
-let value = TFhree.Syntax.ListV([String("abcd")]);;  
+let value = Trustee.Syntax.ListV([String("abcd")]);;  
 
 let%test "Two different secret levels - returned value " =
-  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
+  let (@@) v1 v2 = Trustee.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  let vval = TFhree.Interpreter.eval code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  let vval = Trustee.Interpreter.eval code in 
   vval @@ value
 
 
@@ -102,9 +102,9 @@ let code =
   
 let%expect_test "Two different secret levels - printed value " =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  TFhree.Interpreter.eval code |> ignore;
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  Trustee.Interpreter.eval code |> ignore;
   [%expect {| abcd |}]
 
 
@@ -135,10 +135,10 @@ let code =
 
 let%expect_test "Two different secret levels - no declassify" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
   try 
-    let _ = TFhree.Type_system.type_check code in 
-    TFhree.Interpreter.eval code |> ignore
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
+  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]

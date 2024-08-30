@@ -1,6 +1,6 @@
 (library
- (public_name TFhree)
- (name TFhree)
+ (public_name Trustee)
+ (name Trustee)
  (libraries menhirLib)
  (modules (:standard))
  (inline_tests)

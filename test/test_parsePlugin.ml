@@ -10,10 +10,10 @@ let code = {|
 
 let%expect_test "Parse plugin 1" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  let res = TFhree.Interpreter.eval code in
-  print_endline (TFhree.Utils.string_of_value res);
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  let res = Trustee.Interpreter.eval code in
+  print_endline (Trustee.Utils.string_of_value res);
   [%expect {| 
     Warning: the computed value can be tainted 
     6
@@ -30,13 +30,13 @@ let code = {|
 
 let%expect_test "Parse plugin 2" =
 let lexbuf = Lexing.from_string code in 
-let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
 try 
-  let _ = TFhree.Type_system.type_check code in 
-  TFhree.Interpreter.eval code |> ignore
+  let _ = Trustee.Type_system.type_check code in 
+  Trustee.Interpreter.eval code |> ignore
 with 
 | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-[%expect {| TFhree.Exceptions.Type_Error("Cannot have nested blocks. At: (4, 9)-(4, 56)")|}]
+[%expect {| Trustee.Exceptions.Type_Error("Cannot have nested blocks. At: (4, 9)-(4, 56)")|}]
 
 let code = {|
   // plugin code cannot use external variables
@@ -51,13 +51,13 @@ let code = {|
 
 let%expect_test "Parse plugin 3" =
 let lexbuf = Lexing.from_string code in 
-let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
 try 
-let _ = TFhree.Type_system.type_check code in 
-TFhree.Interpreter.eval code |> ignore
+let _ = Trustee.Type_system.type_check code in 
+Trustee.Interpreter.eval code |> ignore
 with 
 | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-[%expect {| TFhree.Exceptions.Type_Error("An identifier was expected at: (7, 20)-(7, 51)")|}]
+[%expect {| Trustee.Exceptions.Type_Error("An identifier was expected at: (7, 20)-(7, 51)")|}]
 
 let code = {|
   // plugin code must be evaluated in a function
@@ -71,13 +71,13 @@ let code = {|
 
 let%expect_test "Parse plugin 4" =
 let lexbuf = Lexing.from_string code in 
-let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
 try 
-let _ = TFhree.Type_system.type_check code in 
-TFhree.Interpreter.eval code |> ignore
+let _ = Trustee.Type_system.type_check code in 
+Trustee.Interpreter.eval code |> ignore
 with 
 | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-[%expect {| TFhree.Exceptions.Type_Error("A Function was expected at: (6, 19)-(6, 20)") |}]
+[%expect {| Trustee.Exceptions.Type_Error("A Function was expected at: (6, 19)-(6, 20)") |}]
 
 let code = {|
   // plugin code cannot use external variables
@@ -92,10 +92,10 @@ let code = {|
 
 let%expect_test "Parse plugin 5" =
 let lexbuf = Lexing.from_string code in 
-let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
 try 
-let _ = TFhree.Type_system.type_check code in 
-TFhree.Interpreter.eval code |> ignore
+let _ = Trustee.Type_system.type_check code in 
+Trustee.Interpreter.eval code |> ignore
 with 
 | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-[%expect {| TFhree.Exceptions.Binding_Error("a not found at: (6, 37)-(6, 38)")|}]
+[%expect {| Trustee.Exceptions.Binding_Error("a not found at: (6, 37)-(6, 38)")|}]

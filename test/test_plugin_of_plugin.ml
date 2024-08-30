@@ -22,10 +22,10 @@ let code = {|
 
 let%expect_test "Parse plugin 1" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  let res = TFhree.Interpreter.eval code in
-  print_endline (TFhree.Utils.string_of_value res);
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  let res = Trustee.Interpreter.eval code in
+  print_endline (Trustee.Utils.string_of_value res);
   [%expect {| 
     Warning: the computed value can be tainted 
     [ abcd ]

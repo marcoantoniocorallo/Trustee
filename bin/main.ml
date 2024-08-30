@@ -1,13 +1,13 @@
-open TFhree.Exceptions;;
-open TFhree.Utils;;
-open TFhree.Type_system;;
+open Trustee.Exceptions;;
+open Trustee.Utils;;
+open Trustee.Type_system;;
 
 let eval code = 
   let _ = type_check code in 
-  print_endline (string_of_value (TFhree.Interpreter.eval code)) 
+  print_endline (string_of_value (Trustee.Interpreter.eval code)) 
 
 let print_usage () = 
-  print_endline "Usage: TFhree <filename>";
+  print_endline "Usage: Trustee <filename>";
   print_endline "<filename> expected."
   
 let () =
@@ -18,14 +18,14 @@ let () =
     let lexbuf = ref None in  
     try
       lexbuf := Some (Lexing.from_channel (open_in filename));
-      let code = TFhree.Parser.main TFhree.Lexer.tokenize (Option.get !lexbuf) in 
+      let code = Trustee.Parser.main Trustee.Lexer.tokenize (Option.get !lexbuf) in 
       eval code
     with
       | Sys_error(s) -> Printf.fprintf stderr "%s\n" s
       (* Character that doesn't match any case in lexer (i.e. '&')*)
       | Lexing_Error(s) -> Printf.fprintf stderr "%s\n" s
       (* A malformed sequence of tokens (i.e. "let x + 5" ) *)
-      | TFhree.Parser.Error ->  Printf.fprintf stderr "Syntax error at %s.\n%!" 
+      | Trustee.Parser.Error ->  Printf.fprintf stderr "Syntax error at %s.\n%!" 
                         (string_of_position (Lexing.lexeme_start_p (Option.get !lexbuf)))
       (* Type Error *)
       | Type_Error(s) -> Printf.fprintf stderr "Type Error: %s\n" s

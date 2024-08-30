@@ -1,21 +1,21 @@
 let code = {| assert false |};;
 let%expect_test "Assertion test 1" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
   try 
-    let _ = TFhree.Type_system.type_check code in 
-    TFhree.Interpreter.eval code |> ignore
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Assertion_Failure("(1, 9)-(1, 14)") |}]
+  [%expect {| Trustee.Exceptions.Assertion_Failure("(1, 9)-(1, 14)") |}]
 ;;
 
 let code = {| assert true |};;
 let%expect_test "Assertion test 2" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  TFhree.Interpreter.eval code |> ignore;
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  Trustee.Interpreter.eval code |> ignore;
   [%expect {| |}]
 ;;
 
@@ -26,13 +26,13 @@ let code = {|
 
 let%expect_test "Assertion test 3" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
   try 
-    let _ = TFhree.Type_system.type_check code in 
-    TFhree.Interpreter.eval code |> ignore
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Assertion_Failure("(3, 11)-(3, 17)") |}]
+  [%expect {| Trustee.Exceptions.Assertion_Failure("(3, 11)-(3, 17)") |}]
 ;;
 
 let code = {|
@@ -56,13 +56,13 @@ let code = {|
 
 let%expect_test "Assertion test 4" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
   try 
-    let _ = TFhree.Type_system.type_check code in 
-    TFhree.Interpreter.eval code |> ignore
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Assertion_Failure("(17, 11)-(17, 17)") |}]
+  [%expect {| Trustee.Exceptions.Assertion_Failure("(17, 11)-(17, 17)") |}]
 ;;
 
 let code = {|
@@ -86,9 +86,9 @@ let code = {|
 
 let%expect_test "Assertion test 5" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  TFhree.Interpreter.eval code |> ignore;
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  Trustee.Interpreter.eval code |> ignore;
   [%expect {| |}]
 ;;
 
@@ -99,9 +99,9 @@ let code = {|
 
 let%expect_test "Assertion test 6" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  TFhree.Interpreter.eval code |> ignore;
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  Trustee.Interpreter.eval code |> ignore;
   [%expect {| |}]
 ;;
 
@@ -121,11 +121,11 @@ let code = {|
 
 let%expect_test "Assertion test 7" =
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
   try 
-    let _ = TFhree.Type_system.type_check code in 
-    TFhree.Interpreter.eval code |> ignore
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| TFhree.Exceptions.Assertion_Failure("Possible taint expression: (12, 16)-(12, 17)") |}]
+  [%expect {| Trustee.Exceptions.Assertion_Failure("Possible taint expression: (12, 16)-(12, 17)") |}]
 ;;

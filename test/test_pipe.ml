@@ -1,4 +1,4 @@
-open TFhree.Syntax;;
+open Trustee.Syntax;;
 
 let code = 
   {|
@@ -9,11 +9,11 @@ let code =
 let value = String("lambda with annotations");;
 
 let%test "test_pipe" =
-  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
+  let (@@) v1 v2 = Trustee.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  let vval = TFhree.Interpreter.eval code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  let vval = Trustee.Interpreter.eval code in 
   vval @@ value
 
 let code = 
@@ -27,11 +27,11 @@ let code =
 let value = String("lambda with annotations and other annotations");;
 
 let%test "test_pipe_of_pipe" =
-  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
+  let (@@) v1 v2 = Trustee.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  let vval = TFhree.Interpreter.eval code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  let vval = Trustee.Interpreter.eval code in 
   vval @@ value
 
 let code = 
@@ -44,11 +44,11 @@ let code =
 let value = Int(15);;
 
 let%test "test_multiple_arguments_fn_pipe" =
-  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
+  let (@@) v1 v2 = Trustee.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  let vval = TFhree.Interpreter.eval code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  let vval = Trustee.Interpreter.eval code in 
   vval @@ value
 
 let code = 
@@ -61,9 +61,9 @@ let code =
 let value = Int(15);;
 
 let%test "test_high_order_pipe" =
-  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
+  let (@@) v1 v2 = Trustee.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  let vval = TFhree.Interpreter.eval code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  let vval = Trustee.Interpreter.eval code in 
   vval @@ value

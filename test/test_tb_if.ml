@@ -19,13 +19,13 @@ let code =
 
 let%expect_test "TB If - 1" =
 let lexbuf = Lexing.from_string code in 
-let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
 try 
-let _ = TFhree.Type_system.type_check code in 
-TFhree.Interpreter.eval code |> ignore
+let _ = Trustee.Type_system.type_check code in 
+Trustee.Interpreter.eval code |> ignore
 with 
 | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-[%expect {| TFhree.Exceptions.Type_Error("If-Rule: branches return different trusted blocks. At Token: (14, 13)-(14, 47)") |}]
+[%expect {| Trustee.Exceptions.Type_Error("If-Rule: branches return different trusted blocks. At Token: (14, 13)-(14, 47)") |}]
 
 let code = 
   {|
@@ -48,13 +48,13 @@ let code =
 
 let%expect_test "TB If - 2" =
 let lexbuf = Lexing.from_string code in 
-let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
+let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
 try 
-let _ = TFhree.Type_system.type_check code in 
-TFhree.Interpreter.eval code |> ignore
+let _ = Trustee.Type_system.type_check code in 
+Trustee.Interpreter.eval code |> ignore
 with 
 | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-[%expect {| TFhree.Exceptions.Type_Error("Field f not found or not public in block at: (15, 8)-(15, 9)") |}]
+[%expect {| Trustee.Exceptions.Type_Error("Field f not found or not public in block at: (15, 8)-(15, 9)") |}]
 ;;
 
 let code = {|
@@ -75,12 +75,12 @@ let code = {|
   |}
 ;;
 
-let value = TFhree.Syntax.Closure("f","", TFhree.Utils.dummy_value, []);;
+let value = Trustee.Syntax.Closure("f","", Trustee.Utils.dummy_value, []);;
 
 let%test "TB If - 3" =
-  let (@@) v1 v2 = TFhree.Utils.test_cmp_values v1 v2 in 
+  let (@@) v1 v2 = Trustee.Utils.test_cmp_values v1 v2 in 
   let lexbuf = Lexing.from_string code in 
-  let code = TFhree.Parser.main TFhree.Lexer.tokenize lexbuf in 
-  let _ = TFhree.Type_system.type_check code in 
-  let vval = TFhree.Interpreter.eval code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  let _ = Trustee.Type_system.type_check code in 
+  let vval = Trustee.Interpreter.eval code in 
   vval @@ value
