@@ -86,8 +86,8 @@ and value =
 	| Tuple of value list   																(*	Heterogeneous fixed-length tuple of values*)
 	| ListV of value list   																(*	Homogeneous list of values *)
 	(* Block of data and code are associated to value environments *)
-	| TrustedBlock of ((value * integrity) env	[@opaque])
-	| UntrustedBlock of (value * integrity) env
+	| TrustedBlock of 	((value * integrity) env	[@opaque])
+	| UntrustedBlock of ((value * integrity) env	[@opaque])
 	[@@deriving show]
 
 and qualifier = 
