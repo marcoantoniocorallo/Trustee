@@ -192,3 +192,13 @@ Plugin   Secret_i  Secret_j
   - Di fare type erasure a run-time
   - Di avere la NI (quasi) senza sforzi (basta gestire i casi di field privati vs field assenti)
   - Di gestire senza sforzi i leakage tramite print 
+
+- Plugin e Trusted blocks possono essere passati anche come parametri adesso: first-class 
+  citizen! 
+  Per passarli bisogna dichiarare il blocco di funzioni pubbliche (handled) con i
+  rispettivi tipi, fungendo da "interfaccia" che i parametri attuali devono rispettare.
+  In particolare, per passare i trusted blocks bisogna considerare la confidenzialità di 
+  ogni funzione. Questa è SECRET by default, ma il programmatore può specificare tramite 
+  la kw PUBLIC se una funzione ha confidenzialità Normal.
+  In ogni caso, il type system controlla nel momento della chiamata che la confidenzialità
+  delle funzioni dichiarate corrisponda!

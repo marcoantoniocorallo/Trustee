@@ -14,9 +14,30 @@ let rec (<=) (t1 : ttype) (t2 : ttype) : bool = match t1, t2 with
 	| Tlist(None), Tlist(_) -> true
 	| Tlist(Some t1'), Tlist(Some t2') when t1' <= t2' -> true
 	| Ttuple(l1), Ttuple(l2) when List.length l1 = List.length l2 -> List.for_all2 (<=) l1 l2
-  | TtrustedBlock(e1), TtrustedBlock(e2) -> e1 == e2 (* pointer equality *)
-  | TuntrustedBlock(t1'), TuntrustedBlock(t2') -> t1' == t2'
+  | TtrustedBlock(e1), TtrustedBlock(e2) 
+  | TuntrustedBlock(e1), TuntrustedBlock(e2) -> equal_envs e1 e2
 	| _ -> false
+
+(* block env comparison: public function types and confidentialities are compared *)
+and equal_envs lst1 lst2 =
+  let cmp_conf = function
+    | Secret _, Secret _
+    | Plugin, Plugin
+    | Normal _, Normal _ -> 0 
+    | _ -> 1
+  in let cmp_pairs (s1, t1, c1) (s2, t2, c2) =
+    let cmp_s = String.compare s1 s2 in
+    if cmp_s <> 0 then cmp_s
+    else if not(t1 <= t2) then 1
+    else cmp_conf (c1, c2)
+  in let reduce lst = 
+    List.filter (function _,(_,Public,_) -> true | _ ->false) lst |> 
+    List.map (fun (i,(t,_,c)) -> (i,t,c)) |> 
+    List.sort cmp_pairs
+  in List.for_all2
+    (fun (i1, t1, c1) (i2, t2, c2) -> i1=i2 && t1 <= t2 && (cmp_conf(c1, c2) = 0))
+    (reduce lst1) (reduce lst2)
+;; 
 
 (** The starting type environment. *)
 let type_env = [
@@ -167,8 +188,14 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
         | Top       (* handled-functions must not leak data! *)
         | Secret _ -> raise(Security_Error("The program could contain a Data leakage."))
         | _ -> tf, conf
-      else raise (Type_Error("functional application: argument type mismatch"^(string_of_loc (e2.loc))
-                  ^"function "^(string_of_ttype tfun)^" got "^(string_of_ttype t2)^" instead"))
+      else (match (t2, tx) with
+        | TtrustedBlock _, TtrustedBlock _ 
+        | TuntrustedBlock _, TuntrustedBlock _ -> 
+          raise (Type_Error("functional application: argument type mismatch: "^(string_of_loc (e2.loc))
+                  ^"function "^(string_of_ttype tfun)^" got a block with different interface"))
+        | _ -> 
+          raise (Type_Error("functional application: argument type mismatch: "^(string_of_loc (e2.loc))
+                  ^"function "^(string_of_ttype tfun)^" got "^(string_of_ttype t2)^" instead")))
     | other -> 
       raise (Type_Error("Function was expected, got "^(string_of_ttype other)^" at: "^(string_of_loc (e1.loc))))
     )
@@ -245,13 +272,13 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
     if into_block = No then TuntrustedBlock(type_of_block Untrusted None e start_env []), cxt
     else raise (Type_Error("Cannot have nested blocks. At: "^(string_of_loc e.loc)))
   | Access(tb, field) -> 
-    let tbtype, _ =  type_of ~into_block:into_block gamma cxt tb in 
+    let tbtype, tbconf =  type_of ~into_block:into_block gamma cxt tb in 
     ( match tbtype, field.value with
     | TtrustedBlock(env),   Var(id)    (* Only public functions can be accessed in blocks *)
     | TuntrustedBlock(env), Var(id) ->
       ( match List.assoc_opt id env with
       | Some (_, Private, _) -> raise (Type_Error("Field "^id^" not found or not public in block at: "^(string_of_loc tb.loc)))
-      | Some (Tfun(_) as t, Public, c) -> t, join cxt c
+      | Some (Tfun(_) as t, Public, c) -> t, join cxt (join tbconf c)
       | Some (_, _, _) -> raise(Error_of_Inconsistence("Not-function public object in a block! At: "^(string_of_loc e.loc)))
       | None -> raise (Type_Error("Field "^id^" not found or not public in block at: "^(string_of_loc tb.loc)))
       )
@@ -288,7 +315,6 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
  *            env: global type environment
  *            b: environment of the block, the returned one
  *)
-
 and type_of_block (b_type : block_type) (name : ide option) (e : located_exp)
                   (env : (ttype * confidentiality) env)  
                   (b : (ttype * qualifier * confidentiality) env) 
@@ -339,7 +365,7 @@ and type_of_block (b_type : block_type) (name : ide option) (e : located_exp)
           | (Tfun(_) as t, _, conf) -> (name, (t, Public, conf))
           | _ -> raise(Type_Error("A Function was expected at: "^(string_of_loc f.loc)))
           )
-        with Binding_Error s -> raise(Binding_Error(s^" at: "^(string_of_loc f.loc))))
+        with Binding_Error _ -> raise(Binding_Error("Function "^name^" was not declared. At: "^(string_of_loc f.loc))))
       | _ -> raise(Type_Error("An identifier was expected at: "^(string_of_loc f.loc)))
       ) in		
     (List.map (add_f) l)@b

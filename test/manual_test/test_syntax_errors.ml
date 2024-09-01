@@ -57,3 +57,16 @@ let plugin pwd = {
   let fun checkpwd (guess : string) : bool = pass = guess in
 } in pwd
 *)
+
+(*
+// try to declare a method public in a plugin interface
+let plugin pwd = {
+    let pass = "abcd" in
+
+    let fun checkpwd (guess : string) : bool = guess = pass in
+
+    handle: {checkpwd}
+} in 
+let fun f (b: plugin{ public checkpwd: (string -> bool)}) (s : string) : bool = (b.checkpwd) s in
+f pwd "abcd"
+*)

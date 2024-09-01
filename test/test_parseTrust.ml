@@ -35,7 +35,7 @@ let%expect_test "Parse tb 2" =
     Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| Trustee.Exceptions.Binding_Error("checkpw not found at: (6, 14)-(6, 21)") |}]
+  [%expect {| Trustee.Exceptions.Binding_Error("Function checkpw was not declared. At: (6, 14)-(6, 21)") |}]
 ;;
 
 let code = {|
@@ -174,7 +174,7 @@ let%expect_test "Parse tb 8" =
     Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| Trustee.Exceptions.Binding_Error("f not found at: (8, 14)-(8, 15)") |}]
+  [%expect {| Trustee.Exceptions.Binding_Error("Function f was not declared. At: (8, 14)-(8, 15)") |}]
 ;;
 
 let code = {|

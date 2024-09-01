@@ -31,7 +31,7 @@ let%expect_test "test_IO4" =
     Trustee.Interpreter.eval code |> ignore
   with 
     | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| Trustee.Exceptions.Type_Error("functional application: argument type mismatch(1, 15)-(1, 16)function (string -> unit) got int instead") |}]
+  [%expect {| Trustee.Exceptions.Type_Error("functional application: argument type mismatch: (1, 15)-(1, 16)function string -> unit got int instead") |}]
 
 let%expect_test "test_IO5" =
   let code = {| print_float 5 |} in
@@ -42,7 +42,7 @@ let%expect_test "test_IO5" =
     Trustee.Interpreter.eval code |> ignore
   with 
     | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| Trustee.Exceptions.Type_Error("functional application: argument type mismatch(1, 14)-(1, 15)function (float -> unit) got int instead") |}]
+  [%expect {| Trustee.Exceptions.Type_Error("functional application: argument type mismatch: (1, 14)-(1, 15)function float -> unit got int instead") |}]
 
 let%expect_test "test_IO6" =
   let code = {| print_bool true |} in
@@ -61,7 +61,7 @@ let%expect_test "test_IO7" =
     Trustee.Interpreter.eval code |> ignore
   with 
     | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| Trustee.Exceptions.Type_Error("functional application: argument type mismatch(1, 13)-(1, 19)function (bool -> unit) got string instead") |}]
+  [%expect {| Trustee.Exceptions.Type_Error("functional application: argument type mismatch: (1, 13)-(1, 19)function bool -> unit got string instead") |}]
 
 let%expect_test "test_IO8" =
   let code = {| print_char 'c' |} in

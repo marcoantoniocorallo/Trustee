@@ -205,3 +205,39 @@ let%expect_test "private field access" =
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
   [%expect {| Trustee.Exceptions.Type_Error("Field int_f not found or not public in block at: (15, 8)-(15, 14)") |}]
+;;
+
+let code = {|
+  let trust pwd = {
+    let secret pass = "abcd" in
+
+    let fun checkpwd (guess : string) : bool = pass = guess in
+    handle: {checkpwd}
+  } in pwd."not var"
+|};;
+
+let%expect_test "non-var as field access" =
+  let lexbuf = Lexing.from_string code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  try 
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
+  with 
+  | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
+  [%expect {| Trustee.Exceptions.Type_Error("An identifier was expected in access operation at: (7, 12)-(7, 21)") |}]
+;;
+
+let code = {|
+  let pippo = "pippo" in pippo.try
+|};;
+
+let%expect_test "access to non-block exp" =
+  let lexbuf = Lexing.from_string code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  try 
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
+  with 
+  | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
+  [%expect {| Trustee.Exceptions.Type_Error("A block was expected in access operation at: (2, 26)-(2, 31)") |}]
+;;

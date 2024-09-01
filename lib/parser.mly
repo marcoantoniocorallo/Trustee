@@ -53,7 +53,7 @@
 %token PROJ
 %token CONS_OP "::" HEAD "hd" TAIL "tl"
 %token COMMA "," COLON ":" SEMICOLON ";" ARROW "->" DOT "."
-%token TRUST  SECRET  HANDLE  PLUGIN ASSERT TAINT DECLASSIFY
+%token TRUST  SECRET  HANDLE  PLUGIN ASSERT TAINT DECLASSIFY PUBLIC
 %token <Syntax.located_exp>PARSED
 %token EOF
 
@@ -267,6 +267,20 @@ ptype:
 
   | t1 = ptype "->" t2 = ptype
     { Tfun(t1, t2) }
+  
+  | TRUST l = delimited("{",separated_nonempty_list(";",pair(option(PUBLIC),separated_pair(ID, ":", ptype))),"}")
+    {
+      TtrustedBlock(
+        List.map (
+          fun (public_opt, (i, t)) -> match public_opt with
+          | None ->   (i, (t, Public, Secret("")))
+          | Some _ -> (i, (t, Public, Normal("")))
+        ) l
+      )
+    }
+
+  | PLUGIN l = delimited("{",separated_nonempty_list(";",separated_pair(ID, ":", ptype)),"}")
+    { TuntrustedBlock( List.map (fun (i, t) -> (i, (t, Public, Plugin))) l) }
 
 (** simple_type is a syntactical category used for disambiguing the grammar. 
  * In particular, it disambiguise the derivation " type -> type list "

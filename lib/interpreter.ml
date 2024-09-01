@@ -126,7 +126,8 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 		| TrustedBlock(tb_env), Var(id) -> 
 			if t = Taint then raise (Security_Error("(Possible) malicious access to trusted block. Abort."))
 			else List.assoc id tb_env
-		| _,_ -> raise(Type_system_Failed("Access op. with wrong types at: "^(string_of_loc e.loc)))
+		| UntrustedBlock(p_env), Var(id) -> List.assoc id p_env
+		| _,_ -> raise(Type_system_Failed("Access to non-block type at: "^(string_of_loc e.loc)))
 		)
 	| SecretData(_) -> 
 		raise (Error_of_Inconsistence("eval: unexpected secret data outside trusted block: "^(string_of_loc e.loc) ))
@@ -136,7 +137,7 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 		if into_block <> No then raise (Type_Error("Cannot have nested blocks."))
 		else 
 			let v' = eval_untrusted e start_env [] Taint in 
-			TrustedBlock(v'), t
+			UntrustedBlock(v'), t
 	| Assert(p, taint_flag) -> 
 		let v', t' = eval ~into_block:into_block p env t in
 		if taint_flag then (* just assert if the expression p is taint *)

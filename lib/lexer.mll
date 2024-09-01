@@ -10,7 +10,7 @@
 		tbl
 
 	let keyword_table =
-		create_hashtable 30 [
+		create_hashtable 35 [
 			("if", 	IF);
 			("then",THEN);
 			("else",ELSE);
@@ -38,6 +38,7 @@
       ("assert", ASSERT);
       ("taint", TAINT);
       ("declassify", DECLASSIFY);
+      ("public", PUBLIC);
 		]
 
 }
