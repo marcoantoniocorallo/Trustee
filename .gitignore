@@ -4,4 +4,4 @@ _build/
 Trustee
 todo
 design_choices.txt
-plugin/
+plugin/*

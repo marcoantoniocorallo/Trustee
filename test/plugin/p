@@ -1,0 +1,5 @@
+let plugin p = {
+    let s = "s" in
+    let fun f (x : int) : int = x+1
+    in handle: {f}
+} in p

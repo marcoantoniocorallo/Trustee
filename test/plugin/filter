@@ -1,0 +1,15 @@
+let plugin filter = {
+  let fun string_f (predicate : string -> bool) (l : string list) : string list = 
+    if l = [] then [] 
+    else 
+      if predicate (hd l) then (hd l)::(string_f predicate (tl l))
+      else (string_f predicate (tl l))
+  in 
+  
+  let fun int_f (predicate : int -> bool) (l : int list) : int list = 
+    if l = [] then [] 
+    else 
+      if predicate (hd l) then (hd l)::(int_f predicate (tl l))
+      else (int_f predicate (tl l))
+  in handle: {string_f; int_f}
+} in filter 
