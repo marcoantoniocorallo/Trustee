@@ -2,7 +2,7 @@ let code = {|
   // works
   let trust pwd = {
     let secret pass = "abcd" in 
-    let fun checkpwd (guess : string) : bool = pass = guess in 
+    let fun checkpwd (guess : string) : bool = declassify(pass = guess) in 
     handle: {checkpwd}
 } in pwd.checkpwd
 |};;
@@ -22,7 +22,7 @@ let code = {|
   (* Failure ! checkpw is not declared *)
   let trust pwd = {
     let secret pass = "abcd" in 
-    let fun checkpwd (guess : string) : bool = pass = guess in 
+    let fun checkpwd (guess : string) : bool = declassify(pass = guess) in 
     handle: {checkpw}
   } in pwd
 |};;
@@ -43,7 +43,7 @@ let code = {|
   let trust pwd = {
       let secret pass = "abcd" in 
       let id = "pippo" in 
-      let fun checkpwd (guess : string) : bool = pass = guess in 
+      let fun checkpwd (guess : string) : bool = declassify(pass = guess) in 
       handle: {checkpwd; (let x = "pippo" in x); [1, 2, 3]}
   } in pwd
 |};;
@@ -114,32 +114,11 @@ let%expect_test "Parse tb 5" =
 ;;
 
 let code = {|
-  (* FAILURE !!! Only data can be secret *)
-  let trust pwd = {
-    let secret pass = "abcd" in 
-
-    let secret fun checkpwd (guess : string) : bool = pass = guess in 
-    handle: {[1,2]}
-  } in pwd
-|};;
-
-let%expect_test "Parse tb 6" =
-  let lexbuf = Lexing.from_string code in 
-  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
-  try 
-    let _ = Trustee.Type_system.type_check code in 
-    Trustee.Interpreter.eval code |> ignore
-  with 
-  | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| Trustee.Exceptions.Type_Error("Only data can be secret. At: (6, 16)-(6, 67)") |}]
-;;
-
-let code = {|
   (* Failure! only fn names in handle *)
   let trust pwd = {
     let secret pass = "abcd" in 
 
-    let fun checkpwd (guess : string) : bool = pass = guess in 
+    let fun checkpwd (guess : string) : bool = declassify(pass = guess) in 
     handle: {pass}
   } in pwd
 |};;
@@ -161,7 +140,7 @@ let code = {|
   let trust pwd = {
     let secret pass = "abcd" in 
 
-    let fun checkpwd (guess : string) : bool = pass = guess in 
+    let fun checkpwd (guess : string) : bool = declassify(pass = guess) in 
     handle: {f}
   } in pwd
 |};;
@@ -183,7 +162,7 @@ let code = {|
   let trust pwd = {
     let secret pass = "abcd" in 
 
-    let fun checkpwd (guess : string) : bool = pass = guess in
+    let fun checkpwd (guess : string) : bool = declassify(pass = guess) in
     handle: {(lambda : (string -> bool) -> checkpwd)}
   } in pwd
 |};;
@@ -201,7 +180,7 @@ let%expect_test "Parse tb 9" =
 
 let code = {|
   let trust pwd = {
-  let secret pass = "abcd" in 
+  let pass = "abcd" in 
 
   let fun checkpwd (guess : string) : bool = pass = guess in 
   handle: {checkpwd}

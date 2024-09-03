@@ -116,6 +116,17 @@ and block_type = No | Trusted | Untrusted
 let (++) (t1 : integrity) (t2 : integrity) : integrity = 
 	if t1 = t2 then t1 else Taint;;
 
+(* Order relation between confidentiality level *)
+let (<<=) (c1 : confidentiality) (c2 : confidentiality) : bool = 
+	match c1, c2 with
+	| c', c'' when c' = c'' -> true
+	| _, Top -> true
+	| Bottom, _ -> true
+	| Normal x, Secret x' when x=x' -> true
+	| Normal _ , SecretCombined
+	| Secret _, SecretCombined -> true
+	| _, _ -> false
+
 let join e e' = 
 	match e, e' with
 	| c1, c2 when c1 = c2 				-> c1

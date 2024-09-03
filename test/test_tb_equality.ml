@@ -4,7 +4,7 @@ let code =
     let trust pwd = {
       let secret pass = "abcd" in 
 
-      let fun checkpwd (guess : string) : bool = pass = guess in 
+      let fun checkpwd (guess : string) : bool = declassify(pass = guess) in 
       handle: {checkpwd}
     } in 
     let trust t = { 
@@ -33,13 +33,13 @@ let code =
     let trust pwd = {
       let secret pass = "abcd" in 
 
-      let fun checkpwd (guess : string) : bool = pass = guess in 
+      let fun checkpwd (guess : string) : bool = declassify(pass = guess) in 
       handle: {checkpwd}
     } in 
     let trust t = { 
       let secret pass = "abcd" in 
 
-      let fun checkpwd (guess : string) : bool = pass = guess in 
+      let fun checkpwd (guess : string) : bool = declassify(pass = guess) in 
       handle: {checkpwd}
     } in 
     pwd = t 
@@ -63,13 +63,7 @@ let code =
     let trust pwd = {
       let secret pass = "abcd" in 
     
-      let fun checkpwd (guess : string) : bool = pass = guess in 
-      handle: {checkpwd}
-    } in 
-    let trust t = { 
-      let secret pass = "abcd" in 
-    
-      let fun checkpwd (guess : string) : bool = pass = guess in 
+      let fun checkpwd (guess : string) : bool = declassify(pass = guess) in 
       handle: {checkpwd}
     } in 
     pwd = pwd

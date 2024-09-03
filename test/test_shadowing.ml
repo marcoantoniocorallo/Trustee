@@ -3,7 +3,7 @@ let code = {|
       let secret pass = "abcd1" in                           // this var has confidentiality secret(pwd)
 
       let fun checkpwd (guess : string) : bool = 
-        pass = guess in
+        declassify(pass = guess) in
       handle: {checkpwd}
     } in
 

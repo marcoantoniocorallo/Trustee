@@ -153,11 +153,13 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
   | If(e1, e2, e3) ->
     let t1, c1 = type_of ~into_block:into_block gamma cxt e1 in 
     if t1 = Tbool then
-      let cxt' = join cxt c1 in 
-      let t2, c2 = type_of ~into_block:into_block gamma cxt' e2 in
-      let t3, c3 = type_of ~into_block:into_block gamma cxt' e3 in
+      let t2, c2 = type_of ~into_block:into_block gamma cxt e2 in
+      let t3, c3 = type_of ~into_block:into_block gamma cxt e3 in
       match t2, t3 with 
-      | _, _ when t2 <= t3 -> t2, join (join c1 cxt) (join c2 c3)
+      | _, _ when t2 <= t3 -> 
+        if c1=c2 && c1=c3 then
+          t2, join (join c1 cxt) (join c2 c3)
+        else raise (Security_Error("Possible violation of Non-Interference. At Token: "^(string_of_loc (e.loc))))
       | TtrustedBlock _, TtrustedBlock _ when not(t2 <= t3) -> 
         raise (Type_Error ("If-Rule: branches return different trusted blocks. At Token: "^(string_of_loc (e.loc))))
       | _, _ -> 
@@ -170,11 +172,14 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
         let level = if into_block=Untrusted then Plugin else Bottom in 
         let gamma' = (f, (t, level)) :: (x, (t1, level)) :: gamma in
         let t_res, cxt' = type_of ~into_block:into_block gamma' cxt body in 
-        if (t_res) <= t2 then t, join cxt' cxt
-        else
-        raise (Type_Error("Function return type does not match. "
-            ^"Expected "^(string_of_ttype (t_res))^" got "
-            ^(string_of_ttype t2)^" at "^(string_of_loc (e.loc))))
+        (match into_block, cxt' with
+        | Trusted, Top       (* handled-functions must not leak data! *)
+        | Trusted, Secret _ -> raise(Security_Error("The program could contain a Data leakage."))
+        | _ ->
+          if (t_res) <= t2 then t, join cxt' cxt
+          else
+          raise (Type_Error("Function return type does not match. "
+          ^"Expected "^(string_of_ttype (t_res))^" got "^(string_of_ttype t2)^" at "^(string_of_loc (e.loc)))))
       | _ -> raise (Type_Error("Function type does not match"^(string_of_loc (e.loc))))
     )
   | Call(e1, e2) ->
@@ -185,8 +190,7 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
       if t2 <= tx then 
         let tf, conf = tr, join c1 c2
         in match conf with
-        | Top       (* handled-functions must not leak data! *)
-        | Secret _ -> raise(Security_Error("The program could contain a Data leakage."))
+        | Top -> raise(Security_Error("The program could contain a Data leakage."))
         | _ -> tf, conf
       else (match (t2, tx) with
         | TtrustedBlock _, TtrustedBlock _ 

@@ -70,3 +70,13 @@ let plugin pwd = {
 let fun f (b: plugin{ public checkpwd: (string -> bool)}) (s : string) : bool = (b.checkpwd) s in
 f pwd "abcd"
 *)
+
+(*
+(* Type Error! Only data can be secret (Parser exception!) *)
+let trust pwd = {
+  let secret pass = "abcd" in 
+
+  let secret fun checkpwd (guess : string) : bool = declassify(pass = guess) in 
+  handle: {[1,2]}
+} in pwd
+*)

@@ -229,3 +229,6 @@ FAQ:
     all'utente, che mandi i dati filtrati all'attaccante e si comporti come un plugin 
     benigno (trojan horse), questa è la vera minaccia dell'esempio e dei plugin.
     Questo non si presenta con i trusted blocks che, invece, sono trasparenti all'utente.
+
+3.Declassify può costituire un problema (vedi NI - 2), ma demanda la responsabilità sul 
+  programmatore. Stessa filosofia della FFI di Rust.

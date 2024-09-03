@@ -209,9 +209,10 @@ trust_expr:
 | LET s = option(SECRET) e = let_expr IN e4 = trust_expr 
     { 
       let (e1, e2, e3) = e in
-      match s with
-      | None -> Let(e1, e2, e3, e4) |@| $loc
-      | Some _ -> Let(e1, e2, (SecretData(e3) |@| $loc), e4) |@| $loc 
+      match s, e3.value with
+      | None, _ -> Let(e1, e2, e3, e4) |@| $loc
+      | Some _, Fun(_) -> raise(Exceptions.Type_Error("Only data can be secret. At: "^(Utils.string_of_loc e3.loc)))
+      | Some _, _ -> Let(e1, e2, (SecretData(e3) |@| $loc), e4) |@| $loc 
     }
   
 | HANDLE ":" e = delimited("{", separated_nonempty_list(";", simple_expr), "}")

@@ -4,7 +4,7 @@ let code =
     let trust pwd = {
       let secret pass = "abcd" in
 
-      let fun checkpwd (guess : string) : bool = pass = guess in
+      let fun checkpwd (guess : string) : bool = declassify(pass = guess) in
       handle: {checkpwd}
     } in pwd.checkpwd
   |}
@@ -31,7 +31,7 @@ let code =
   |}
 ;;
 
-let%expect_test "Closure of checkpwd - no secret data" =
+let%expect_test "Closure of checkpwd - secret data" =
   let lexbuf = Lexing.from_string code in 
   let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
   try 
@@ -47,7 +47,7 @@ let code =
     let trust pwd = {
       let secret pass = "abcd" in
 
-      let fun checkpwd (guess : string) : bool = pass = guess in
+      let fun checkpwd (guess : string) : bool = declassify(pass = guess) in
       handle: {checkpwd}
     } in pwd.pass
   |}
@@ -69,7 +69,7 @@ let code =
     let trust pwd = {
       let secret pass = "abcd" in
 
-      let fun checkpwd (guess : string) : bool = pass = guess in
+      let fun checkpwd (guess : string) : bool = declassify(pass = guess) in
       handle: {checkpwd}
     } in pwd.pas
   |}
@@ -136,7 +136,7 @@ let code =
   let trust pwd = {
     let secret pass = "abcd" in
 
-    let fun checkpwd (guess : string) : bool = guess = pass in
+    let fun checkpwd (guess : string) : bool = declassify(guess = pass) in
     let fun checkpwd2 : bool = true in
     handle: {checkpwd; checkpwd2}
   } in pwd.checkpwd2
@@ -155,13 +155,13 @@ let%test "more handled fns" =
 
 let code =
   {|
-    // access to private member + data leakage
+    // access to private member // declassify break the IFA; remove it to prevent leak
     let trust pwd = {
       let secret pass = true in 
 
-      let fun nonhandled : bool = pass in 
+      let fun nonhandled : bool = declassify(pass) in 
 
-      let fun call_checkpwd : bool = pass
+      let fun call_checkpwd : bool = declassify(pass)
       in
       handle: {call_checkpwd}
     } in
@@ -169,7 +169,7 @@ let code =
   |}
 ;;
 
-let%expect_test "private field access" =
+let%expect_test "private field access 1" =
   let lexbuf = Lexing.from_string code in 
   let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
   try 
@@ -211,7 +211,7 @@ let code = {|
   let trust pwd = {
     let secret pass = "abcd" in
 
-    let fun checkpwd (guess : string) : bool = pass = guess in
+    let fun checkpwd (guess : string) : bool = declassify(pass = guess) in
     handle: {checkpwd}
   } in pwd."not var"
 |};;

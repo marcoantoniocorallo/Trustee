@@ -49,11 +49,12 @@ let%expect_test "secret conf. block passed" =
 
 
 let code = {|
-  // secret conf. block passed as public -> Type Error!
+  // secret conf. block passed as public -> Security error!
+  // before to the parameter passing, the function has a data leak!
   let trust pwd = {
       let secret pass = "abcd" in
 
-      let fun checkpwd (guess : string) : bool = guess = pass in
+      let fun checkpwd (guess : string) : bool = pass = guess in
 
       handle: {checkpwd}
   } in 
@@ -69,12 +70,11 @@ let%expect_test "secret conf. block passed as public" =
     Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| Trustee.Exceptions.Type_Error("functional application: argument type mismatch: (11, 5)-(11, 8)function Trusted Block type -> string -> bool got a block with different interface") |}]
+  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
 ;;
 
 let code = {|
-  // public conf. block passed as secret -> Security Error:
-  // is the same of invoking pwd.checkpwd without the declassification
+  // public conf. block passed as secret -> Type Error!
   let trust pwd = {
       let secret pass = "abcd" in
 
@@ -94,7 +94,7 @@ let%expect_test "public conf. block passed as secret" =
     Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
+  [%expect {| Trustee.Exceptions.Type_Error("functional application: argument type mismatch: (11, 5)-(11, 8)function Trusted Block type -> string -> bool got a block with different interface") |}]
 ;;
 
 let code = {|

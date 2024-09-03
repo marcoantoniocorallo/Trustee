@@ -47,7 +47,7 @@ let%expect_test "Data leak value printed" =
     Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
+  [%expect {| Trustee.Exceptions.Security_Error("Possible violation of Non-Interference. At Token: (6, 11)-(7, 79)") |}]
 
 let code =
   {|

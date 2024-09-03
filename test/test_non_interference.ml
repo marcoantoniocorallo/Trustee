@@ -1,5 +1,5 @@
 let code = {|
-  // NI satisfied
+  // NI satisfied (Prevented!)
   let trust pwd = {
     let secret pass = "abcd" in 
 
@@ -19,7 +19,7 @@ let%expect_test "NI - 1" =
     Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
+  [%expect {| Trustee.Exceptions.Security_Error("Possible violation of Non-Interference. At Token: (6, 9)-(7, 72)") |}]
 ;;
 
 let code = {|
@@ -43,9 +43,10 @@ let%expect_test "NI - 2" =
   let _ = Trustee.Type_system.type_check code in 
   Trustee.Interpreter.eval code |> ignore;
   [%expect {| hello |}]
-
-  let code = {|
-  // NI satisfied
+;;
+  
+let code = {|
+  // Data leak statically blocked
   let trust pwd = {
     let secret pass = "abcd" in
     let fun checkpwd (guess : string) : bool = guess = pass in
@@ -65,9 +66,7 @@ let%expect_test "NI - 3" =
 ;;
 
 let code = {|
-  // NI still satisfied: with the declassification the confidentiality of pass became L,
-  // and then there are no L values that depend on a H variable
-  // --> bad use of declassify, responsability of the developer
+  // NI satisfied (prevented): guard has conf = Normal("pwd"), if/else has bottom!
   let trust pwd = {
     let secret pass = "abcd" in
     let fun checkpwd (guess : string) : bool = declassify(guess = pass) in
@@ -75,9 +74,13 @@ let code = {|
   } in if (pwd.checkpwd "abcd") then 5 else 10
 |};;
 
-let%test "NI - 4" =
+let%expect_test "NI - 4" =
   let lexbuf = Lexing.from_string code in 
   let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
-  let _ = Trustee.Type_system.type_check code in 
-  Trustee.Interpreter.eval code |> 
-  Trustee.Utils.test_cmp_values (Int(5))
+  try 
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
+  with 
+  | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
+  [%expect {| Trustee.Exceptions.Security_Error("Possible violation of Non-Interference. At Token: (7, 8)-(7, 47)") |}]
+;;
