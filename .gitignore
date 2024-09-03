@@ -5,3 +5,4 @@ Trustee
 todo
 design_choices.txt
 plugin/*
+test/ex

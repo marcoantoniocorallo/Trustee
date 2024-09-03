@@ -143,6 +143,7 @@ Plugin   Secret_i  Secret_j
   passati come argomenti (infatti non è possibile (vincolo sintattico) definire un 
   plugin all'interno di un tb). Dunque non vi è più l'artificio a run-time che blocca
   il passaggio di plugin come parametri!
+
   Naturalmente, questo limita un po' l'usabilità del linguaggio dato che la commistione
   di plugin e trusted block, anche quando sarebbe lecita, viene conservativamente trattata
   come potenziale punto di leakage. Si tratta di una scelta progettuale che predilige
@@ -153,10 +154,22 @@ Plugin   Secret_i  Secret_j
   deve dare Top (=> data leak) perchè i blocchi che usano declassify(.) all'interno 
   hanno confidenzialità "Normal _". Permettere questo tipo di interazioni è pericoloso
 
+- Nota: Solo i dati possono essere secret e solo le funzioni possono essere handled
+
+- Plugin e Trusted blocks possono essere passati anche come parametri adesso: first-class 
+  citizen! 
+  Per passarli bisogna dichiarare il blocco di funzioni pubbliche (handled) con i
+  rispettivi tipi, fungendo da "interfaccia" che i parametri attuali devono rispettare.
+  In particolare, per passare i trusted blocks bisogna considerare la confidenzialità di 
+  ogni funzione. Questa è SECRET by default, ma il programmatore può specificare tramite 
+  la kw PUBLIC se una funzione ha confidenzialità Normal.
+  In ogni caso, il type system controlla nel momento della chiamata che la confidenzialità
+  delle funzioni dichiarate corrisponda!
+
+-------------------------------------------------------------------------------
+
 - Trusted block e plugin sono ora comparabili e viene eseguita una pointer equality.
  In questo modo non vi può essere leak di dati privati se un tb viene comparato a tb diversi.
- 
-- Nota: Solo i dati possono essere secret e solo le funzioni possono essere handled
 
 - Future Works:
   - Generalizzazione ed estensione dei blocchi (=> objects/record types)
@@ -169,16 +182,8 @@ Plugin   Secret_i  Secret_j
     (type system ibrido statico-dinamico)
   - Generics
   - REPL
-
-- Nota: i plugin sono semplicemente dei wrapper per singole funzioni, e come tali possono
-  essere passate o restituite. Non c'è una type annotation per i plugin perchè questi 
-  vengono gestiti come funzioni.
-  I trusted block, invece, non possono essere passati nè restituiti (infatti, questi 
-  sono environment che contengono informazioni sulla confidenzialità e bisognerebbe
-  richiedere all'utente/programmatore di specificare correttamente il livello di conf. di
-  ogni funzione in fase di type annotation... un artificio complesso e inutile). Piuttosto,
-  dato che l'unico tipo di campi accessibili sono funzioni, è possibile passare una tupla 
-  di funzioni, come nell'esempio test_from_tb_to_tuple.ml
+  - definizione di interfacce
+  - encryption of secret fieldds
 
 - Non-Interference è rispettata:
   - se si tenta di accedere ad un field secret, o ad un field inesistente, viene restituita
@@ -193,12 +198,34 @@ Plugin   Secret_i  Secret_j
   - Di avere la NI (quasi) senza sforzi (basta gestire i casi di field privati vs field assenti)
   - Di gestire senza sforzi i leakage tramite print 
 
-- Plugin e Trusted blocks possono essere passati anche come parametri adesso: first-class 
-  citizen! 
-  Per passarli bisogna dichiarare il blocco di funzioni pubbliche (handled) con i
-  rispettivi tipi, fungendo da "interfaccia" che i parametri attuali devono rispettare.
-  In particolare, per passare i trusted blocks bisogna considerare la confidenzialità di 
-  ogni funzione. Questa è SECRET by default, ma il programmatore può specificare tramite 
-  la kw PUBLIC se una funzione ha confidenzialità Normal.
-  In ogni caso, il type system controlla nel momento della chiamata che la confidenzialità
-  delle funzioni dichiarate corrisponda!
+----------------------------------------------------------------------------------------
+FAQ:
+1.Hanno senso i controlli nel momento del caricamento di un plugin?
+  - Se non controllassimo che: 
+    a. I file importati contengano solo e soltanto la definizione di un plugin e 
+    b. I file siano all'interno di una cartella conosciuta (plugin),
+    un utente malevolo potrebbe scrivere e condividere un plugin
+    ```
+    let pwd : string = <".../password.txt"> in 
+    let plugin evil = {
+      // do bad things with pwd // trojan horse
+      // do good things
+    } ... 
+    ```
+    in questo modo non si eliminano naturalmente i trojan horse, ma se ne mitigano le 
+    possibilità, senza ridurre l'espressività dei plugin in generale.
+
+2.Niente mi vieta di avere un trusted block che implementa una funzione filter e 
+    viene poi applicato al trusted block pwd, ricadendo nell'esempio malevolo 
+    presentato nel testo dell'homework.
+    Tuttavia, in questo caso si parla di codice trusted, conosciuto e fidato dall'utente
+    dunque la correttezza/sicurezza del programma dato dalla composizione di più TB è 
+    demandata all'utente, che può analizzare i blocchi di codice (a differenza di quanto 
+    avviene per i plugin).
+    La pericolosità dell'esempio, infatti, non è data dalla funzione filter che è 
+    implementabile anche all'interno di un trusted block o di codice standard, ma 
+    dall'impossibilità da parte dell'utente di conoscere il codice del plugin.
+    In questo senso, un plugin potrebbe implementare una funzione filter "invisibile"
+    all'utente, che mandi i dati filtrati all'attaccante e si comporti come un plugin 
+    benigno (trojan horse), questa è la vera minaccia dell'esempio e dei plugin.
+    Questo non si presenta con i trusted blocks che, invece, sono trasparenti all'utente.

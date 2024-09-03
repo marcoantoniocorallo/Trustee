@@ -264,11 +264,9 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
   | NativeFunction(_) ->
     raise ( Error_of_Inconsistence("type system: !!! Prohibit use of Native Functions !!! at: "^(string_of_loc e.loc)))
   | Trust(id, b) -> 
-    (*if into_block = No then TtrustedBlock(type_of_trusted id b start_env []), cxt*)
     if into_block = No then TtrustedBlock(type_of_block Trusted (Some(id)) b start_env []), cxt
     else raise (Type_Error("Cannot have nested blocks. At: "^(string_of_loc e.loc)))
   | PluginData(e) -> 
-    (*if into_block = No then TuntrustedBlock(type_of_untrusted e start_env []), cxt*)
     if into_block = No then TuntrustedBlock(type_of_block Untrusted None e start_env []), cxt
     else raise (Type_Error("Cannot have nested blocks. At: "^(string_of_loc e.loc)))
   | Access(tb, field) -> 

@@ -1,6 +1,6 @@
 all: build
 
-.SILENT: build test clean
+.SILENT: build test clean setup
 
 build:
 	dune build
@@ -17,11 +17,10 @@ install: build
 
 setup:
 	bash setup.sh
-	echo "Complete."
 
 test:
 	dune runtest
-	echo "Complete."
+	echo "Test completed."
 
 clear: clean
 
@@ -30,6 +29,6 @@ clean:
 	rm -fr _install
 	rm -f ./Trustee
 	rm -fr plugin
-	echo "Complete."
+	echo "Clean."
 
 .PHONY: all build install clear clean test setup
