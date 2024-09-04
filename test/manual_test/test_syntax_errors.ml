@@ -33,7 +33,7 @@ let plugin p = {
 *)
 
 (*
-// secret not allowed! -> syntax error
+// secret not allowed! -> type error (raised by parser)
 let plugin p = {
     let secret s = "s"  in handle:{s}
 } in p
