@@ -16,6 +16,7 @@ open Exceptions;;
  *)
 let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_exp) 
 							(env : (value * integrity) env) (t : integrity) : (value * integrity) = 
+	if into_block=Trusted && t=Taint then raise(Security_Error("(Possible) malicious access to trusted block. Abort."));
 	match e.value with
 	| Empty -> Unit, t
 	| CstI i -> Int i, t
@@ -189,7 +190,7 @@ and eval_untrusted	(e : located_exp) (env : (value * integrity) env)
 			( match eRhs.value with
 			| SecretData(s) -> let v, _ = eval ~into_block:Untrusted s env t in v, t
 			| Trust(_) -> raise (Type_system_Failed("Cannot have nested blocks."))
-			| _ -> eval ~into_block:Trusted eRhs env t
+			| _ -> eval ~into_block:Untrusted eRhs env t
 			) in 
 		let letEnv = (x, xVal) :: env in
 		let tb' = (x, xVal)::tb in 
