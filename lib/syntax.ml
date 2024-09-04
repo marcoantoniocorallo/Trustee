@@ -96,7 +96,6 @@ and qualifier =
 
 and confidentiality = 
 	| Top 						(* Information leak *)
-	| SecretCombined	(* More trusted blocks interact themselfs *)
 	| Plugin | Secret of ide	(* Data (of a given block) subject to IF *)
 	| Normal of ide		(* non-secret data of a given trusted block *)
 	| Bottom					(* Public *)
@@ -123,21 +122,17 @@ let (<<=) (c1 : confidentiality) (c2 : confidentiality) : bool =
 	| _, Top -> true
 	| Bottom, _ -> true
 	| Normal x, Secret x' when x=x' -> true
-	| Normal _ , SecretCombined
-	| Secret _, SecretCombined -> true
+	| Normal _ , Secret ""
+	| Secret _, Secret "" -> true
 	| _, _ -> false
 
 let join e e' = 
 	match e, e' with
 	| c1, c2 when c1 = c2 				-> c1
 	| Normal x1, Secret x2
-	| Secret x2, Normal x1				-> if x1 = x2 then Secret x1 else SecretCombined
+	| Secret x2, Normal x1				-> if x1 = x2 then Secret x1 else Secret ""
 	| Normal _, Normal _
-	| Secret _, Secret _		
-	| SecretCombined, Secret _ 
-	| Secret _ , SecretCombined
-	| SecretCombined, Normal _
-	| Normal _, SecretCombined		-> SecretCombined
+	| Secret _, Secret _					-> Secret ""
 	| Plugin, Secret _ 
 	| Plugin, Normal _
 	| Normal _, Plugin

@@ -109,7 +109,7 @@ quando si parsa un plugin viene controllato che sia effettivamente un plugin!
 - Il reticolo di confidenzialità
             T
       /     |
-     /   SecretCombined
+     /   Secret_emp
     /       |         \
 Plugin   Secret_i  Secret_j
    \        |         /
@@ -122,7 +122,7 @@ Plugin   Secret_i  Secret_j
   - Codice non-secret all'interno di un trusted block b avrà confidenzialità Normal_b
   - Codice secret all'interno di un trusted block b avrà confidenzialità Secret_b
   - Se codice normal_b interagisce con secret_b, diventa secret_b
-  - Se codice normal_x/secret_x interagisce con normal_y/secret_y, si ottiene SecretCombined
+  - Se codice normal_x/secret_x interagisce con normal_y/secret_y, si ottiene Secret_emp
     in questo modo più trusted block (codice verificato) possono interagire tra loro. 
     Nota: niente mi vieta di avere un trusted block che implementa una funzione filter e 
     viene poi applicato al trusted block checkpwd, ricadendo nell'esempio malevolo 
@@ -184,6 +184,7 @@ Plugin   Secret_i  Secret_j
   - REPL
   - definizione di interfacce
   - encryption of secret fieldds
+  - Aumentare granularità lattice (es: print di valori normal)
 
 - Non-Interference è rispettata:
   - se si tenta di accedere ad un field secret, o ad un field inesistente, viene restituita
@@ -232,3 +233,11 @@ FAQ:
 
 3.Declassify può costituire un problema (vedi NI - 2), ma demanda la responsabilità sul 
   programmatore. Stessa filosofia della FFI di Rust.
+
+4. Non interference più stretta di quanto serve, ma sound e safe 
+
+5.La granularità attuale del reticolo è necessaria perchè:
+  - Solo codice Normal K può diventare secret K 
+  - La declassificazione di un'espressione secret K porta ad un valore normal K
+  - L'esecuzione di un plugin all'interno di un tb viene bloccata, anche se 
+    viene effettuata in una procedura non-secret

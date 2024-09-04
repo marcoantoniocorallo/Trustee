@@ -1,5 +1,5 @@
 let code = {|
-  // NI satisfied (Prevented!)
+  // NI satisfied (print blocked because conf. plugin -> prevented!)
   let trust pwd = {
     let secret pass = "abcd" in 
 
@@ -19,13 +19,12 @@ let%expect_test "NI - 1" =
     Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| Trustee.Exceptions.Security_Error("Possible violation of Non-Interference. At Token: (6, 9)-(7, 72)") |}]
+  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
 ;;
 
 let code = {|
-  // NI still satisfied: with the declassification the confidentiality of pass became L,
-  // and then there are no L values that depend on a H variable
-  // --> bad use of declassify, responsability of the developer
+  // NI still satisfied: even with the declassification, 
+  // print is blocked (plugin + normal -> top)!
   let trust pwd = {
     let secret pass = "abcd" in 
 
@@ -40,9 +39,12 @@ let code = {|
 let%expect_test "NI - 2" =
   let lexbuf = Lexing.from_string code in 
   let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
-  let _ = Trustee.Type_system.type_check code in 
-  Trustee.Interpreter.eval code |> ignore;
-  [%expect {| hello |}]
+  try 
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
+  with 
+  | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
+  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
 ;;
   
 let code = {|
@@ -83,4 +85,28 @@ let%expect_test "NI - 4" =
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
   [%expect {| Trustee.Exceptions.Security_Error("Possible violation of Non-Interference. At Token: (7, 8)-(7, 47)") |}]
+;;
+
+let code = {|
+  // NI satisfied (Prevented!)
+  let trust pwd = {
+    let secret pass = "abcd" in 
+
+    let fun call_checkpwd : unit = 
+      if pass = "abcd" then "hello" else "hi"
+    in
+    handle: {call_checkpwd}
+  } in
+  pwd.call_checkpwd()
+|};;
+
+let%expect_test "NI - 5" =
+  let lexbuf = Lexing.from_string code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  try 
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
+  with 
+  | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
+  [%expect {| Trustee.Exceptions.Security_Error("Possible violation of Non-Interference. At Token: (6, 9)-(7, 46)") |}]
 ;;

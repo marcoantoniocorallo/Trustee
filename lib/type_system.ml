@@ -65,7 +65,13 @@ let type_env = [
   "print_string", Tfun(Tstring, Tunit);
 ];;
 
-let type_env = List.map (fun (i,t) -> (i, (t, Bottom))) type_env;;
+let type_env = 
+  List.map (
+    fun (i,t) -> (* print primitives have conf. Plugin, to recognize leakages *)
+      if String.starts_with ~prefix:"print" i then (i, (t, Plugin))
+      else (i, (t, Bottom))
+  ) type_env
+;;
 
 (** Typing rule in a given type environment gamma.
  * @params: into_block: keep trace of where we are: Trusted, Untrusted, Outside of blocks

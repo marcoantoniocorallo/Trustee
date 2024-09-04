@@ -47,7 +47,7 @@ let%expect_test "Data leak value printed" =
     Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| Trustee.Exceptions.Security_Error("Possible violation of Non-Interference. At Token: (6, 11)-(7, 79)") |}]
+  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
 
 let code =
   {|
@@ -110,12 +110,16 @@ let code =
   |}
 ;;
 
+(* still blocked because print (plugin) joined to tb (normal) rises to Top *)
 let%expect_test "don't touch secret data" =
   let lexbuf = Lexing.from_string code in 
   let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
-  let _ = Trustee.Type_system.type_check code in 
-  Trustee.Interpreter.eval code |> ignore;
-  [%expect {| abcd |}]
+  try 
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
+  with 
+  | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
+  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
 
 
 let code = {| 
@@ -136,3 +140,26 @@ let%expect_test "declassify outside of trusted blocks" =
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
   [%expect {| Trustee.Exceptions.Type_Error("Declassification is only possible inside trusted blocks. At: (5, 18)-(5, 30)") |}]
+;;
+
+let code = {|
+  let trust pwd = {
+    let secret pass = "abcd" in
+    let fun checkpwd (guess : string) : bool = 
+      let _ = print_string pass in 
+      declassify(guess = pass) in
+    handle: {checkpwd}
+  } in pwd.checkpwd "abcd"
+|}
+;;
+
+let%expect_test "print secret data" =
+  let lexbuf = Lexing.from_string code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  try 
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
+  with 
+  | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
+  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
+;;

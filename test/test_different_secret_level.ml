@@ -48,7 +48,7 @@ let code =
     } in
 
     // note: the following tb has not secret-level data! 
-    // But public/normal is at the same level of secret in the lattice so their join is Top
+    // But plugin/normal is at the same level of secret in the lattice so their join is Top
     let trust filter = {
       let fun string_f (predicate : string -> bool) (l : string list) : string list = 
         if l = [] then [] 
@@ -72,10 +72,10 @@ let%test "Two different secret levels - returned value " =
   let _ = Trustee.Type_system.type_check code in 
   let vval = Trustee.Interpreter.eval code in 
   vval @@ value
+;;
 
 
-
-(* same scenario, but the value filtered is jut printed *)
+(* same scenario, but the value filtered is just printed -> still blocked! *)
 let code = 
   {|
     let trust pwd = {
@@ -103,10 +103,13 @@ let code =
 let%expect_test "Two different secret levels - printed value " =
   let lexbuf = Lexing.from_string code in 
   let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
-  let _ = Trustee.Type_system.type_check code in 
-  Trustee.Interpreter.eval code |> ignore;
-  [%expect {| abcd |}]
-
+  try 
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
+  with 
+  | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
+  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
+;;
 
 (* same scenario as the first one, but without declassify => recognize and prevent leak *)
 let code = 
