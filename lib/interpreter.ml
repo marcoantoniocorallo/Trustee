@@ -119,7 +119,7 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 		else 
 			if t = Taint then raise (Security_Error("(Possible) malicious access to trusted block. Abort."))
 			else 
-				let v' = eval_trusted b start_env [] Untaint in 
+				let v' = eval_block Trusted b start_env [] Untaint in 
 				TrustedBlock(v'), t
 	| Access(tb, field) -> 
 		let tbv, _ =  eval ~into_block:into_block tb env t in 
@@ -137,7 +137,7 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 	| PluginData(e) ->
 		if into_block <> No then raise (Type_Error("Cannot have nested blocks."))
 		else 
-			let v' = eval_untrusted e start_env [] Taint in 
+			let v' = eval_block Untrusted e start_env [] Taint in 
 			UntrustedBlock(v'), t
 	| Assert(p, taint_flag) -> 
 		let v', t' = eval ~into_block:into_block p env t in
@@ -156,53 +156,31 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
  *          tb: environment of the trusted block, that this function returns
  *					t: integrity level context						
  *)
-and eval_trusted	(e : located_exp) (env : (value * integrity) env) 
-									(tb : (value * integrity) env) (t : integrity) 
-											: (value * integrity) env = 
-	if t = Taint then raise(Security_Error("Trusted block in taint status. Abort."));
+and eval_block 	(b_type : block_type) (e : located_exp) (env : (value * integrity) env) 
+								(tb : (value * integrity) env) (t : integrity) 
+										: (value * integrity) env = 
+	(* checks of consistence *)
+	if b_type = No then raise(Error_of_Inconsistence("type_of_block with block_type = No ! At: "^(string_of_loc e.loc)));
+  if b_type = Trusted && t = Taint then raise(Security_Error("Trusted block in taint status. Abort."));
 	match e.value with
 	| Let(x, _, eRhs, letBody) -> (* evaluates rhs, adds to env and tb and eval(_trusted) the body *)
 		let xVal = 
 			( match eRhs.value with
-			| SecretData(s) -> let v, _ = eval ~into_block:Trusted s env t in v, t
+			| SecretData(s) -> let v, _ = eval ~into_block:b_type s env t in v, t
 			| Trust(_) -> raise (Type_system_Failed("Cannot have nested blocks."))
-			| _ -> eval ~into_block:Trusted eRhs env t
+			| _ -> eval ~into_block:b_type eRhs env t
 			) in 
 		let letEnv = (x, xVal) :: env in
 		let tb' = (x, xVal)::tb in 
-		eval_trusted letBody letEnv tb' t
+		eval_block b_type letBody letEnv tb' t
 	| Handle(l) -> (* for each item i, adds (i, (eval i, Public)) to tb *)
 		let add_f (f : located_exp) = 
-			(match eval ~into_block:Trusted f env t with
+			(match eval ~into_block:b_type f env t with
 			| Closure(name,_,_,_) as c, t -> (name, (c,t))
-			| _ -> raise(Type_system_Failed("eval_trusted: not-function value in handle at: "^(string_of_loc e.loc)))
+			| _ -> raise(Type_system_Failed("eval_block: not-function value in handle at: "^(string_of_loc e.loc)))
 			) in		
 		(List.map (add_f) l)@tb
-	| other ->	raise (Error_of_Inconsistence("eval_trusted: unexpected construct! "
-							^(Syntax.show_exp other)^" at: "^(string_of_loc e.loc) ))
-
-and eval_untrusted	(e : located_exp) (env : (value * integrity) env) 
-										(tb : (value * integrity) env) (t : integrity) 
-											: (value * integrity) env = 
-	match e.value with
-	| Let(x, _, eRhs, letBody) -> (* evaluates rhs, adds to env and tb and eval(_trusted) the body *)
-		let xVal = 
-			( match eRhs.value with
-			| SecretData(s) -> let v, _ = eval ~into_block:Untrusted s env t in v, t
-			| Trust(_) -> raise (Type_system_Failed("Cannot have nested blocks."))
-			| _ -> eval ~into_block:Untrusted eRhs env t
-			) in 
-		let letEnv = (x, xVal) :: env in
-		let tb' = (x, xVal)::tb in 
-		eval_untrusted letBody letEnv tb' t
-	| Handle(l) -> 
-		let add_f (f : located_exp) = 
-			(match eval ~into_block:Untrusted f env t with
-			| Closure(name,_,_,_) as c, t -> (name, (c,t))
-			| _ -> raise(Type_system_Failed("eval_trusted: not-function value in handle at: "^(string_of_loc e.loc)))
-			) in		
-		(List.map (add_f) l)@tb
-	| other ->	raise (Error_of_Inconsistence("eval_trusted: unexpected construct! "
+	| other ->	raise (Error_of_Inconsistence("eval_block: unexpected construct! "
 							^(Syntax.show_exp other)^" at: "^(string_of_loc e.loc) ))
 ;;
 
