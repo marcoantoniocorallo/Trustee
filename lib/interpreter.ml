@@ -151,7 +151,8 @@ let rec eval ?(into_block=No) ?(start_env=(Native_functions.env)) (e : located_e
 
 (** Evaluates a trusted block of expression to an environment that keep trace of the integrity
  * note: the only constructs possible in a trusted block are declaration and handle
- * @params:	e: expression to type-check
+ * @params:	b_type: type of block: Trusted or Untrusted (plugin)
+ *					e: expression to type-check
  *          env: global type environment
  *          tb: environment of the trusted block, that this function returns
  *					t: integrity level context						
