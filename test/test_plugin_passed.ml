@@ -99,3 +99,46 @@ let%expect_test "Plugin returned" =
   print_endline (Trustee.Utils.string_of_value res);
   [%expect {| <Plugin> |}]
 ;;
+
+let code = {|
+  let trust tb = {
+    let secret pwd = "pwd" in 
+    let fun tk_arg (f : plugin{ f: unit -> int }) : int = f.f()
+    in handle: {tk_arg}
+} in 
+let plugin f = {let fun f : int = 5 in handle: {f}} in 
+tb.tk_arg f
+|};;
+
+let%expect_test "plugin into tb blocked" =
+  let lexbuf = Lexing.from_string code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  try 
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
+  with 
+  | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
+  [%expect {| Trustee.Exceptions.Security_Error("Cannot access to plugin from inside trusted blocks.") |}]
+;;
+
+let code = {|
+// plugin conf in tb -> blocked
+let trust tb = {
+    let secret pwd = "pwd" in 
+    let fun tk_arg (f: unit -> int) : int = f()
+    in handle: {tk_arg}
+} in 
+let plugin f = {let fun f : int = 5 in handle: {f}} in 
+tb.tk_arg (f.f)
+|};;
+
+let%expect_test "plugin into tb blocked" =
+  let lexbuf = Lexing.from_string code in 
+  let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
+  try 
+    let _ = Trustee.Type_system.type_check code in 
+    Trustee.Interpreter.eval code |> ignore
+  with 
+  | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
+  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
+;;
