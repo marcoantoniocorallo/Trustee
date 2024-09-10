@@ -158,13 +158,14 @@ let rec type_of ?(into_block=No) ?(start_env=type_env) (gamma : (ttype * confide
     )
   | If(e1, e2, e3) ->
     let t1, c1 = type_of ~into_block:into_block gamma cxt e1 in 
+    let c1' = join c1 cxt in 
     if t1 = Tbool then
-      let t2, c2 = type_of ~into_block:into_block gamma cxt e2 in
-      let t3, c3 = type_of ~into_block:into_block gamma cxt e3 in
+      let t2, c2 = type_of ~into_block:into_block gamma c1' e2 in
+      let t3, c3 = type_of ~into_block:into_block gamma c1' e3 in
       match t2, t3 with 
       | _, _ when t2 <= t3 -> 
         if c1=c2 && c1=c3 then
-          t2, join (join c1 cxt) (join c2 c3)
+          t2, join c1' (join c2 c3)
         else raise (Security_Error("Possible violation of Non-Interference. At Token: "^(string_of_loc (e.loc))))
       | TtrustedBlock _, TtrustedBlock _ when not(t2 <= t3) -> 
         raise (Type_Error ("If-Rule: branches return different trusted blocks. At Token: "^(string_of_loc (e.loc))))

@@ -79,12 +79,9 @@ let code = {|
 let%expect_test "NI - 4" =
   let lexbuf = Lexing.from_string code in 
   let code = Trustee.Parser.main Trustee.Lexer.tokenize lexbuf in 
-  try 
-    let _ = Trustee.Type_system.type_check code in 
-    Trustee.Interpreter.eval code |> ignore
-  with 
-  | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| Trustee.Exceptions.Security_Error("Possible violation of Non-Interference. At Token: (7, 8)-(7, 47)") |}]
+  let _ = Trustee.Type_system.type_check code in 
+  Trustee.Interpreter.eval code |> Trustee.Utils.string_of_value |> print_endline;
+  [%expect {| 5 |}]
 ;;
 
 let code = {|
@@ -108,5 +105,5 @@ let%expect_test "NI - 5" =
     Trustee.Interpreter.eval code |> ignore
   with 
   | exn -> Printf.fprintf stderr "%s\n" (Printexc.to_string exn);
-  [%expect {| Trustee.Exceptions.Security_Error("Possible violation of Non-Interference. At Token: (6, 9)-(7, 46)") |}]
+  [%expect {| Trustee.Exceptions.Security_Error("The program could contain a Data leakage.") |}]
 ;;
