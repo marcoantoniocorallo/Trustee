@@ -68,7 +68,7 @@ let%expect_test "NI - 3" =
 ;;
 
 let code = {|
-  // NI satisfied (prevented): guard has conf = Normal("pwd"), if/else has bottom!
+  // NI satisfied (prevented): guard has conf = Normal("pwd"), if/else has bottom U Normal("pwd")!
   let trust pwd = {
     let secret pass = "abcd" in
     let fun checkpwd (guess : string) : bool = declassify(guess = pass) in
