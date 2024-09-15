@@ -1,16 +1,19 @@
-![](https://github.com/marcoantoniocorallo/Fhree/blob/main/cover_1.png)
+![](https://github.com/marcoantoniocorallo/Trustee/blob/main/cover_1.png)
 
 ---
-# Fhree
-Fhree is a *reference implementation* of a small *strongly and statically typed* functional language, it is *interpreted* and it implements the *big-step operational* semantics.
+# Trustee
 
-It is the result of some excercises for the [*Languages, Compilers and Interpreters*](https://github.com/lillo/compiler-course-unipi) course @ [*UniPi*](https://di.unipi.it/), and it's an extension of the *FUN* language shown by [Prof. Galletta](https://github.com/lillo) during the lectures.
+Trustee is the extension of a simple, statically typed, functional language for supporting security primitives. 
+These functionalities include
+- Block of trusted code, with different qualified level of confidentiality;
+- Plugin, that is the possibility to include untrusted functions;
+- Static Information-Flow Analysis to prevent data leakage;
+- Dynamic Taint Analysis to keep trace of the tainted value;
+- Assertion primitives for testing both properties and taintness.
 
-The language is strongly inspired by [*OCaml*](https://ocaml.org/), with some syntactical differences and simplifications.
+This project has been presented for the exam of *Language-based technology for Security* course @ [*UniPi*](https://di.unipi.it/), and it's an extension of [*Fhree*](https://github.com/marcoantoniocorallo/Fhree).
 
-The name Fhree is a word pun derived from the original language's name *FUN*.
-
-Fun probably states for "*Functional*", but it can also mean "*having fun*", so the word pun would be "*Fun for fun*", whose acronym is *FFF* $\rightarrow$ *F3* $\rightarrow$ *F Three* $\rightarrow$ *F(h)ree*.
+Trustee is strongly inspired by Ocaml, Java and Rust, is strongly and statically typed and uses an enriched type system that prevents and avoids in advance security errors and data leakages.
 
 ---
 
@@ -86,27 +89,6 @@ is a comment *)
 ```
 
 ---
-#### Values
-
-Expressible and denotable values are 
-
-- integers
-
-- booleans
-
-- characters
-
-- floats
-
-- strings
-
-- function closures
-
-- tuples of values
-
-- list of values
-
----
 #### I/O
 There are IO directives for each data type. The format for the type `T` is `get_T`/`print_T`.
 
@@ -123,85 +105,52 @@ in get_int () |> fact
 ```
 
 ---
-#### Control Flow Analysis
-
-In addition to the *type analysis*, Fhree does a step of *control-flow-analysis*, using a *fix-point* algorithm. The result of the analysis of a file *f* is writed into a file *f*.cfa.
-
-The CFA is skipped by default (option `--no-cfa`), as you can read in the usage message. 
-
-There is also an option to do **only** the CFA, using Fhree as an analyzer.
-
----
-#### Requirements
-
-Fhree is developed using OCaml and some OCaml tools for generating lexer and parser. For building the project, you must have these tools installed in your environment.
-
-- *OCaml* and *opam*: follow the [official instruction](https://ocaml.org/docs/up-and-running#installation-for-unix) for you platform
-
-- *Menhir* once you have installed opam, just run `opam install menhir`
-
----
-#### Usage
-
-To build *Fhree* just move in the directory and run `make`.
-
-After that, you can run the interpreter of the language `./Fhree` with the following options.
-
-```
-Usage: Fhree [--no-cfa | --cfa | --all] filename
-Options:
- --no-cfa
-    default option: executes only the program, without analyzing the control-flow;
- --cfa
-    executes only the control-flow analyzer, without executing the program;
- --all
-    does a control-flow-analysis of the code and prints the result into filename.cfa
-    then executes the program;
+#### Trusted Blocks
+The idea behind trusted blocks is of blocks of code that group together trusted code and data. They can be used to store confidential data and
+operations on them, as well as to mark a snippet of code as trusted, maybe because already verified.
+```ocaml
+let trust pwd = {
+    let secret pass = "abcd" i n // confidential data
+    let fun checkpwd ( guess : string ) : bool = declassify ( pass = guess ) in
+    handle : { checkpwd } // "public" function i.e. callable from the external environment
+} in pwd.checkpwd "try this pass"
 ```
 
----
-#### Design choices:
-- An empty program is still a correct program (with `Unit` value).
-- There is a single _sequencing_ expression, that is `let ... in`.
-- The language requires **type annotation** for function parameter and return type.
-- The construct `Proj t i` takes a tuple and an integer **literal**! 
-  That's motivated by the static type checking. 
-- IO primitives are _"native"_ functions, that is: closure preloaded into the environment and defined by means of an AST node that can be instantied only by invokations to these functions.
-- At the moment, `Proj` on tuples and list operators are **not** functions!
-  They are simple expressions, and then they cannot be used as higher-order functions or passed in pipe. 
-  Again, that's motivated by the static type checking.
-  This will be updated with the future introduction of _generics_.
+A trusted block can contain only definitions and a non-empty, mandatory, handle block that specifies which functions can be accessed from
+the external environment. A trusted block is treated as an environment binding names to informations, that are:
+- data type, qualifier and confidentiality level in phase of type-checking;
+- value and integrity level during the evaluation.
+Indeed, the type-checker ensures, among other things, that non-public (i.e. not handled) fields are not accessed and it is the responsible for the information-flow analysis that prevents data leakage.
+All of these informations are then _erased_ before the evaluation, in which only the integrity informations are retained.
 
 ---
-#### To Do:
+Plugins represent the opposite idea of the trusted blocks: they are snippets of untrusted code, provided by third parties.
+Plugins are implemented as *(**un**)Trusted blocks*: they share the same syntax with tbs and they are pretty similar:
+```ocaml
+let plugin filter = {
+    let fun string f ( predicate : string -> bool ) ( l : string list ) : string list =
+        if l = [] then []
+        else
+            if predicate ( hd l ) then ( hd l ) : : ( string f predicate ( tl l ) )
+            else ( string f predicate ( tl l ) )
+    in handle : { string f }
+} in filter
+```
+A plugin can be included by means of the following syntax:`<"filename">`, with which the definition of a plugin is statically parsed and loaded from `plugin/filename`.
+If filename is not in the plugin directory, or doesn’t contain a plugin definition, then an exception is raised, in accordance with the principle of *least privilege*.
 
-- Hexadecimal integers
+Trusted blocks and plugins are first-class citizen in Trustee, you can find more information about the type system in chapter 5 of the [report](https://github.com/marcoantoniocorallo/Trustee/blob/main/report.pdf)
 
-- Global Declarations
+---
+#### Requirements and usage
 
-- Unification algorithm for removing the mandatory type annotation in fun definitions
-
-- Another unification algorithm for an implementation of *pattern matching*
-
-- REPL
-
-- Code generation for a simple compilation
-
-- Generics
-
-- ~~Uncurried functions definitions~~ 
-
-  Multiple-argument function definition are now available!
-  They make use of *currying*: they are parsed and converted in the corresponding *curried* - single-argument - functions: a function f 
-  
-  ```ocaml
-  fun f (a : t1) (b : t2) (c :t3) : tf = body;;
-  ```
-  
-  is internally converted into
-  
-  ```ocaml
-  fun f (a : t1) : (t2 -> t3 -> tf) -> 
-      lambda (b : t2) : (t3 -> tf) -> 
-          lambda (c : t3) : tf -> body
-  ```
+Trustee has been developed using the OCaml ecosystem, including:
+- `ocamllex` as lexer generator;
+- `Menhir` as parser generator;
+- `Dune` and `Makefile` as build system;
+- `ppx_deriving`, `ppx_test` and `ppx_expect` for preprocessing and testing.
+You can install the dependencies by `make setup` and then build the interpreter by `make`.
+The interpreter is `Trustee`.
+```
+Usage: Trustee <filename>
+```
